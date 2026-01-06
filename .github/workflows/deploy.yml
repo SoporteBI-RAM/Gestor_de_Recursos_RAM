@@ -25,6 +25,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build with secrets
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          API_KEY: ${{ secrets.API_KEY }}
+          SCRIPT_URL: ${{ secrets.SCRIPT_URL }}
+        run: |
+          chmod +x .github/scripts/build.sh
+          .github/scripts/build.sh
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

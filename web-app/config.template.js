@@ -1,18 +1,16 @@
 // ========================================
 // CONFIGURACIÓN DE GOOGLE SHEETS
 // ========================================
+// NOTA: Este es un archivo template. Los valores se reemplazan durante el deployment.
 
 const CONFIG = {
     // ID de tu Google Sheet
-    // NOTA: Este valor se reemplaza automáticamente durante el deployment desde GitHub Secrets
     SHEET_ID: '__SHEET_ID__',
 
     // API Key de Google Cloud
-    // NOTA: Este valor se reemplaza automáticamente durante el deployment desde GitHub Secrets
     API_KEY: '__API_KEY__',
 
     // URL del Google Apps Script (Web App URL)
-    // NOTA: Este valor se reemplaza automáticamente durante el deployment desde GitHub Secrets
     SCRIPT_URL: '__SCRIPT_URL__',
 
     // Nombres de las hojas (NO CAMBIAR - deben coincidir exactamente con el Google Sheet)
@@ -144,15 +142,15 @@ async function escribirHoja(sheetName, values) {
 function validarConfiguracion() {
     if (CONFIG.SHEET_ID === 'TU_GOOGLE_SHEET_ID_AQUI' || CONFIG.SHEET_ID === '__SHEET_ID__') {
         mostrarError('⚠️ Configuración Requerida',
-            'Por favor configura los secrets en GitHub. ' +
-            'Ve a Settings → Secrets and variables → Actions y agrega SHEET_ID, API_KEY y SCRIPT_URL.');
+            'Por favor configura tu SHEET_ID en el archivo config.js. ' +
+            'Consulta WEB_APP_SETUP.md para instrucciones.');
         return false;
     }
 
     if (CONFIG.API_KEY === 'TU_API_KEY_AQUI' || CONFIG.API_KEY === '__API_KEY__') {
         mostrarError('⚠️ Configuración Requerida',
-            'Por favor configura los secrets en GitHub. ' +
-            'Ve a Settings → Secrets and variables → Actions y agrega SHEET_ID, API_KEY y SCRIPT_URL.');
+            'Por favor configura tu API_KEY en el archivo config.js. ' +
+            'Consulta WEB_APP_SETUP.md para instrucciones.');
         return false;
     }
 
