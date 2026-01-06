@@ -22,12 +22,24 @@ async function cargarUsuarios() {
 
         // Convertir a objetos (asumiendo: Nombre | Email | Contraseña | Rol)
         const headers = data.values[0];
-        usuarios = data.values.slice(1).map(row => ({
-            nombre: row[0] || '',
-            email: row[1] || '',
-            password: row[2] || '',
-            rol: row[3] || 'usuario'
-        }));
+        console.log('📋 Headers encontrados:', headers);
+
+        usuarios = data.values.slice(1).map((row, index) => {
+            const user = {
+                nombre: row[0] ? row[0].trim() : '',
+                email: row[1] ? row[1].trim() : '',
+                password: row[2] ? row[2].trim() : '',
+                rol: row[3] ? row[3].trim() : 'usuario'
+            };
+            console.log(`👤 Usuario ${index + 1}:`, {
+                nombre: user.nombre,
+                email: user.email,
+                tienePassword: user.password ? 'Sí' : 'No',
+                longitudPassword: user.password.length,
+                rol: user.rol
+            });
+            return user;
+        });
 
         console.log(`✅ ${usuarios.length} usuarios cargados`);
         return true;
@@ -40,10 +52,29 @@ async function cargarUsuarios() {
 
 // Validar credenciales
 function validarCredenciales(email, password) {
+    console.log('🔍 Intentando login con:', {
+        email: email,
+        password: '***' + password.substring(password.length - 3),
+        longitudPassword: password.length
+    });
+
+    console.log('📚 Usuarios disponibles:');
+    usuarios.forEach((u, i) => {
+        const emailMatch = u.email.toLowerCase() === email.toLowerCase();
+        const passMatch = u.password === password;
+        console.log(`  ${i + 1}. Email: ${u.email} (match: ${emailMatch}), Password match: ${passMatch}`);
+    });
+
     const usuario = usuarios.find(u =>
         u.email.toLowerCase() === email.toLowerCase() &&
         u.password === password
     );
+
+    if (usuario) {
+        console.log('✅ Usuario encontrado:', usuario.nombre);
+    } else {
+        console.log('❌ No se encontró usuario con esas credenciales');
+    }
 
     return usuario;
 }
