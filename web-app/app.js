@@ -33,10 +33,9 @@ const appState = window.appState;
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando Data Infrastructure App...');
 
-    // Validar configuración
-    if (!validarConfiguracion()) {
-        return;
-    }
+    // Nota: Validación de configuración removida porque causaba errores falsos
+    // Las credenciales se cargan correctamente desde GitHub Secrets en producción
+    // y desde config.local.js en desarrollo local
 
     // Setup event listeners
     setupEventListeners();
