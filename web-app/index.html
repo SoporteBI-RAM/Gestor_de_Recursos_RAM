@@ -976,13 +976,7 @@
     <!-- Scripts -->
     <script src="config.js?v=113"></script>
     <!-- Config local para desarrollo (sobrescribe config.js si existe) -->
-    <script>
-        // Intentar cargar config.local.js si existe (solo para desarrollo local)
-        const script = document.createElement('script');
-        script.src = 'config.local.js?v=113';
-        script.onerror = () => console.log('ℹ️ Usando config.js (producción)');
-        document.head.appendChild(script);
-    </script>
+    <script src="config.local.js?v=113" onerror="console.log('ℹ️ Usando config.js (producción)')"></script>
     <script src="icon-picker.js?v=113"></script>
     <script src="admin-functions.js?v=113"></script>
     <script src="categorias-functions.js?v=113"></script>
