@@ -23,10 +23,16 @@ echo "  SCRIPT_URL: ${SCRIPT_URL:0:40}..."
 # Crear copia del archivo template
 cp web-app/config.template.js web-app/config.js
 
-# Usar perl en lugar de sed para reemplazo más confiable
-perl -pi -e "s|__SHEET_ID__|$ENV{SHEET_ID}|g" web-app/config.js
-perl -pi -e "s|__API_KEY__|$ENV{API_KEY}|g" web-app/config.js
-perl -pi -e "s|__SCRIPT_URL__|$ENV{SCRIPT_URL}|g" web-app/config.js
+# Reemplazar usando bash directamente (más simple y confiable)
+# Escapar caracteres especiales para uso en sed
+SHEET_ID_ESC=$(printf '%s\n' "$SHEET_ID" | sed 's:[\/&]:\\&:g;$!s/$/\\/')
+API_KEY_ESC=$(printf '%s\n' "$API_KEY" | sed 's:[\/&]:\\&:g;$!s/$/\\/')
+SCRIPT_URL_ESC=$(printf '%s\n' "$SCRIPT_URL" | sed 's:[\/&]:\\&:g;$!s/$/\\/')
+
+# Reemplazar placeholders
+sed -i "s|__SHEET_ID__|${SHEET_ID_ESC}|g" web-app/config.js
+sed -i "s|__API_KEY__|${API_KEY_ESC}|g" web-app/config.js
+sed -i "s|__SCRIPT_URL__|${SCRIPT_URL_ESC}|g" web-app/config.js
 
 echo "✅ Build completado exitosamente"
 echo "📦 Archivo config.js generado con credenciales"
