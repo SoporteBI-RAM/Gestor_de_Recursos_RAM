@@ -20,23 +20,28 @@ async function cargarUsuarios() {
             throw new Error('No hay usuarios disponibles');
         }
 
-        // Convertir a objetos (asumiendo: Nombre | Email | Contraseña | Rol)
+        // Convertir a objetos
+        // Estructura: ID_User | Nombre_Usuario | Email | Contraseña | Rol | Estado | Fecha_Creacion | Ultima_Actualizacion
         const headers = data.values[0];
         console.log('📋 Headers encontrados:', headers);
 
         usuarios = data.values.slice(1).map((row, index) => {
             const user = {
-                nombre: row[0] ? row[0].trim() : '',
-                email: row[1] ? row[1].trim() : '',
-                password: row[2] ? row[2].trim() : '',
-                rol: row[3] ? row[3].trim() : 'usuario'
+                id: row[0] ? row[0].trim() : '',
+                nombre: row[1] ? row[1].trim() : '',
+                email: row[2] ? row[2].trim() : '',
+                password: row[3] ? row[3].trim() : '',
+                rol: row[4] ? row[4].trim() : 'usuario',
+                estado: row[5] ? row[5].trim() : 'Activo'
             };
             console.log(`👤 Usuario ${index + 1}:`, {
+                id: user.id,
                 nombre: user.nombre,
                 email: user.email,
                 tienePassword: user.password ? 'Sí' : 'No',
                 longitudPassword: user.password.length,
-                rol: user.rol
+                rol: user.rol,
+                estado: user.estado
             });
             return user;
         });
@@ -62,18 +67,20 @@ function validarCredenciales(email, password) {
     usuarios.forEach((u, i) => {
         const emailMatch = u.email.toLowerCase() === email.toLowerCase();
         const passMatch = u.password === password;
-        console.log(`  ${i + 1}. Email: ${u.email} (match: ${emailMatch}), Password match: ${passMatch}`);
+        const estadoActivo = u.estado === 'Activo';
+        console.log(`  ${i + 1}. Email: ${u.email} (match: ${emailMatch}), Password match: ${passMatch}, Estado: ${u.estado} (activo: ${estadoActivo})`);
     });
 
     const usuario = usuarios.find(u =>
         u.email.toLowerCase() === email.toLowerCase() &&
-        u.password === password
+        u.password === password &&
+        u.estado === 'Activo'
     );
 
     if (usuario) {
         console.log('✅ Usuario encontrado:', usuario.nombre);
     } else {
-        console.log('❌ No se encontró usuario con esas credenciales');
+        console.log('❌ No se encontró usuario con esas credenciales o usuario inactivo');
     }
 
     return usuario;
