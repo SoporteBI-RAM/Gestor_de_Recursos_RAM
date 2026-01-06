@@ -18,6 +18,8 @@ Sistema web para la gestión y validación de entregables, clientes y marcas. In
 - **Backend**: Google Apps Script
 - **Base de Datos**: Google Sheets
 - **API**: JSONP para bypass de CORS
+- **Deployment**: GitHub Actions + GitHub Pages
+- **Seguridad**: GitHub Secrets para protección de credenciales
 
 ## 📋 Estructura del Proyecto
 
