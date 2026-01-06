@@ -1,0 +1,2 @@
+ID_Relacion,ID_Recurso,Nombre_Recurso,ID_Origen,Nombre_Origen,Orden,Es_Principal
+1,1,=VLOOKUP(B2;Recursos_Conectividad!A:F;6;0),1,=VLOOKUP(D2;Origenes_Datos!A:E;5;0),1,✓

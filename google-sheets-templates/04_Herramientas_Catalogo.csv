@@ -1,0 +1,19 @@
+ID_Herramienta,Nombre_Herramienta,Tipo,Icono,URL_Base,URL_Documentacion,Requiere_Autenticacion,Fecha_Agregada
+1,Supermetrics,Conector,🔗,https://hub.supermetrics.com,https://docs.supermetrics.com,✓,2024-01-01
+2,BigQuery,Warehouse,🗄️,https://console.cloud.google.com/bigquery,https://cloud.google.com/bigquery/docs,✓,2024-01-01
+3,Looker Studio,Visualización,📊,https://lookerstudio.google.com,https://support.google.com/looker-studio,✓,2024-01-01
+4,Power BI,Visualización,📈,https://app.powerbi.com,https://docs.microsoft.com/power-bi,✓,2024-01-01
+5,GA4,Analytics,📍,https://analytics.google.com,https://support.google.com/analytics,✓,2024-01-01
+6,Google Ads,CRM,🎯,https://ads.google.com,https://support.google.com/google-ads,✓,2024-01-01
+7,Facebook Ads,CRM,📘,https://business.facebook.com,https://www.facebook.com/business/help,✓,2024-01-01
+8,Google Sheets,Warehouse,📄,https://sheets.google.com,https://support.google.com/docs,✓,2024-01-01
+9,Zapier,Conector,⚡,https://zapier.com,https://zapier.com/help,✓,2024-01-01
+10,Make (Integromat),Conector,🔄,https://make.com,https://www.make.com/en/help,✓,2024-01-01
+11,Tableau,Visualización,📉,https://www.tableau.com,https://help.tableau.com,✓,2024-01-01
+12,TikTok Ads,CRM,🎵,https://ads.tiktok.com,https://ads.tiktok.com/help,✓,2024-01-01
+13,LinkedIn Ads,CRM,💼,https://www.linkedin.com/campaignmanager,https://www.linkedin.com/help/lms,✓,2024-01-01
+14,Instagram Ads,CRM,📸,https://business.facebook.com/adsmanager,https://www.facebook.com/business/help,✓,2024-01-01
+15,MySQL,Warehouse,🐬,https://www.mysql.com,https://dev.mysql.com/doc/,✓,2024-01-01
+16,PostgreSQL,Warehouse,🐘,https://www.postgresql.org,https://www.postgresql.org/docs/,✓,2024-01-01
+17,Salesforce,CRM,☁️,https://www.salesforce.com,https://help.salesforce.com,✓,2024-01-01
+18,HubSpot,CRM,🧲,https://www.hubspot.com,https://knowledge.hubspot.com,✓,2024-01-01

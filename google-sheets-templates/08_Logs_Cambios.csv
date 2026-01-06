@@ -1,0 +1,2 @@
+ID_Log,Tabla_Afectada,ID_Registro,Tipo_Cambio,Campo_Modificado,Valor_Anterior,Valor_Nuevo,Usuario,Fecha_Cambio
+1,clientes,1,CREATE,,,Cliente creado,admin@agency.com,2024-12-30 15:00:00

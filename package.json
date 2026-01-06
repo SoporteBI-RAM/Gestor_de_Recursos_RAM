@@ -1,0 +1,12 @@
+{
+  "name": "gestor-de-recursos",
+  "version": "1.0.0",
+  "description": "Data Infrastructure Web App",
+  "scripts": {
+    "dev": "npx serve web-app -l 3000",
+    "start": "npx serve web-app -l 3000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

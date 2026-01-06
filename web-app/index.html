@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Validaciones - Monitoreo Diario</title>
+    <link rel="stylesheet" href="styles.css?v=36">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <h1>Sistema de Validaciones</h1>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="username">Usuario</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation -->
+    <nav class="main-nav">
+        <div class="container">
+            <button class="nav-btn active" data-view="dashboard" onclick="cargarDashboardValidacion()">
+                <i class="fas fa-check-circle"></i> Validaciones
+            </button>
+            <button class="nav-btn" data-view="clientes">
+                <i class="fas fa-folder"></i> Clientes
+            </button>
+            <button class="nav-btn" data-view="historial-validaciones" onclick="cargarHistorialValidaciones()">
+                <i class="fas fa-history"></i> Historial
+            </button>
+            <button class="nav-btn" data-view="administracion">
+                <i class="fas fa-cog"></i> Administración
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+
+        <!-- Vista: Dashboard de Validaciones -->
+        <div id="dashboard-view" class="view active">
+            <div class="section-header">
+                <h1>📊 Dashboard de Validaciones</h1>
+                <button class="btn-secondary" onclick="cargarDashboardValidacion()">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+
+            <div id="dashboard-validacion-container">
+                <div class="loading">Cargando validaciones del día...</div>
+            </div>
+        </div>
+
+        <!-- Vista: Historial de Validaciones -->
+        <div id="historial-validaciones-view" class="view">
+            <div class="section-header">
+                <h1>📋 Historial de Validaciones</h1>
+                <button class="btn-secondary" onclick="cargarHistorialValidaciones()">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+
+            <div id="historial-validaciones-container">
+                <div class="loading">Cargando historial...</div>
+            </div>
+        </div>
+
+        <!-- Vista: Resumen Antiguo (Backup) -->
+        <div id="resumen-view" class="view">
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="global-search" placeholder="Buscar cliente, entregable o herramienta...">
+            </div>
+
+            <!-- Stats Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Resumen</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-clientes">0</h3>
+                            <p>Clientes</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-entregables">0</h3>
+                            <p>Entregables</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-recursos">0</h3>
+                            <p>Recursos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-alertas">0</h3>
+                            <p>Alertas</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Herramientas Más Usadas -->
+            <section class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-tools"></i> Herramientas Más Usadas</h2>
+                </div>
+                <div id="herramientas-populares" class="herramientas-chips">
+                    <div class="loading">Cargando...</div>
+                </div>
+            </section>
+
+            <!-- Clientes Activos -->
+            <section class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-folder-open"></i> Clientes Activos</h2>
+                    <button class="btn-primary" onclick="mostrarFormularioCliente()">
+                        <i class="fas fa-plus"></i> Nuevo Cliente
+                    </button>
+                </div>
+                <div id="clientes-lista" class="clientes-grid">
+                    <div class="loading">Cargando clientes...</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Vista: Clientes -->
+        <div id="clientes-view" class="view">
+            <div class="view-header">
+                <h2><i class="fas fa-folder"></i> Todos los Clientes</h2>
+                <button class="btn-primary" onclick="mostrarFormularioCliente()">
+                    <i class="fas fa-plus"></i> Nuevo Cliente
+                </button>
+            </div>
+            <div id="clientes-tabla-container">
+                <div class="loading">Cargando clientes...</div>
+            </div>
+        </div>
+
+        <!-- Vista: Alertas -->
+        <div id="alertas-view" class="view">
+            <div class="view-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Gestión de Alertas</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="todas">Todas</button>
+                    <button class="filter-btn" data-filter="activa">Activas</button>
+                    <button class="filter-btn" data-filter="en_proceso">En Proceso</button>
+                    <button class="filter-btn" data-filter="resuelta">Resueltas</button>
+                </div>
+            </div>
+            <div id="alertas-tabla-container">
+                <div class="loading">Cargando alertas...</div>
+            </div>
+        </div>
+
+        <!-- Vista: Administración -->
+        <div id="administracion-view" class="view">
+            <div class="view-header">
+                <h2><i class="fas fa-cog"></i> Administración del Sistema</h2>
+            </div>
+
+            <p style="color: #5F6368; margin-bottom: 24px;">
+                Gestiona todos los catálogos y tablas maestras del sistema. Todos los cambios se sincronizan automáticamente con Google Sheets.
+            </p>
+
+            <!-- Tabs de Administración -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" data-admin-tab="users">
+                    <i class="fas fa-users"></i> Usuarios
+                </button>
+                <button class="admin-tab-btn" data-admin-tab="tipos">
+                    <i class="fas fa-tags"></i> Tipos de Entregable
+                </button>
+                <button class="admin-tab-btn" data-admin-tab="herramientas">
+                    <i class="fas fa-tools"></i> Herramientas
+                </button>
+                <button class="admin-tab-btn" data-admin-tab="categorias">
+                    <i class="fas fa-folder"></i> Categorías de Herramientas
+                </button>
+            </div>
+
+            <!-- Tab: Users -->
+            <div id="admin-tab-users" class="admin-tab-content active">
+                <div class="view-header">
+                    <h3><i class="fas fa-users"></i> Gestión de Usuarios</h3>
+                    <button class="btn-primary" onclick="mostrarFormularioUser()">
+                        <i class="fas fa-plus"></i> Nuevo Usuario
+                    </button>
+                </div>
+                <div id="users-tabla-container">
+                    <div class="loading">Cargando usuarios...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Tipos de Entregable -->
+            <div id="admin-tab-tipos" class="admin-tab-content">
+                <div class="view-header">
+                    <h3><i class="fas fa-tags"></i> Tipos de Entregable</h3>
+                    <button class="btn-primary" onclick="mostrarFormularioTipoEntregable()">
+                        <i class="fas fa-plus"></i> Nuevo Tipo
+                    </button>
+                </div>
+                <div id="tipos-tabla-container">
+                    <div class="loading">Cargando tipos...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Herramientas -->
+            <div id="admin-tab-herramientas" class="admin-tab-content">
+                <div class="view-header">
+                    <h3><i class="fas fa-tools"></i> Catálogo de Herramientas</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="mostrarGestionCategorias()" style="background: #5F6368;">
+                            <i class="fas fa-tags"></i> Gestionar Categorías
+                        </button>
+                        <button class="btn-primary" onclick="mostrarFormularioHerramienta()">
+                            <i class="fas fa-plus"></i> Nueva Herramienta
+                        </button>
+                    </div>
+                </div>
+                <div id="herramientas-tabla-container">
+                    <div class="loading">Cargando herramientas...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Categorías de Herramientas -->
+            <div id="admin-tab-categorias" class="admin-tab-content">
+                <div class="view-header">
+                    <h3><i class="fas fa-folder"></i> Categorías de Herramientas</h3>
+                    <button class="btn-primary" onclick="mostrarFormularioCategoriaHerramienta()">
+                        <i class="fas fa-plus"></i> Nueva Categoría
+                    </button>
+                </div>
+                <div id="categorias-tabla-container">
+                    <div class="loading">Cargando categorías...</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Ver Cliente -->
+    <div id="modal-cliente" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2><i class="fas fa-folder-open"></i> <span id="modal-cliente-nombre"></span></h2>
+                <button class="modal-close" onclick="cerrarModalCliente()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="cliente-detalles">
+                    <div class="loading">Cargando detalles del cliente...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Cliente -->
+    <div id="modal-form-cliente" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> Nuevo Cliente</h2>
+                <button class="modal-close" onclick="cerrarFormularioCliente()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-cliente" onsubmit="guardarCliente(event)">
+                    <input type="hidden" name="id_cliente" value="">
+                    <div class="form-group">
+                        <label>Nombre del Cliente *</label>
+                        <input type="text" name="nombre_cliente" id="input-nombre-cliente" required style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Inicio</label>
+                        <input type="date" name="fecha_inicio">
+                    </div>
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select name="estado">
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Pausado">Pausado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea name="notas" rows="3"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioCliente()">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Entregable -->
+    <div id="modal-form-entregable" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> Nuevo Entregable</h2>
+                <button class="modal-close" onclick="cerrarFormularioEntregable()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-entregable" onsubmit="guardarEntregable(event)">
+                    <input type="hidden" name="id_entregable" value="">
+                    <input type="hidden" name="id_cliente" value="">
+                    <input type="hidden" name="id_marca" value="">
+
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <select name="cliente" id="select-cliente-entregable" required onchange="cargarMarcasDeCliente(this.value)">
+                            <option value="">Selecciona un cliente...</option>
+                            <!-- Se carga dinámicamente desde tabla Clientes -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Marca *</label>
+                        <select name="marca" id="select-marca-entregable" required>
+                            <option value="">Primero selecciona un cliente...</option>
+                            <!-- Se carga dinámicamente según cliente seleccionado -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre del Entregable *</label>
+                        <input type="text" name="nombre_entregable" required placeholder="Ej: Dashboard Ventas Meta">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tipo de Entregable *</label>
+                        <select name="tipo_entregable" id="select-tipo-entregable" required>
+                            <option value="">Selecciona tipo de entregable...</option>
+                            <!-- Se carga dinámicamente desde tabla Tipos_Entregable -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Frecuencia de Validación *</label>
+                        <select name="frecuencia_validacion" id="select-frecuencia-validacion" required onchange="actualizarCampoDiaValidacion(this.value)">
+                            <option value="">Selecciona frecuencia...</option>
+                            <option value="Diario">Diario</option>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Quincenal">Quincenal</option>
+                            <option value="Mensual">Mensual</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="campo-dia-validacion">
+                        <label>Día de Validación *</label>
+                        <div id="container-dia-validacion">
+                            <select name="dia_validacion" id="select-dia-validacion" required>
+                                <option value="Todos">Todos los días</option>
+                            </select>
+                        </div>
+                        <small class="form-help">Selecciona primero la frecuencia de validación</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Herramientas y URLs de Fuentes</label>
+                        <div id="herramientas-container">
+                            <table class="herramientas-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 35%">Herramienta</th>
+                                        <th style="width: 55%">URL / Comentario</th>
+                                        <th style="width: 10%">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="herramientas-list">
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn-secondary btn-sm" onclick="agregarFilaHerramienta()">
+                                <i class="fas fa-plus"></i> Agregar Herramienta
+                            </button>
+                        </div>
+                        <input type="hidden" name="urls_fuentes" id="hidden-herramientas">
+                        <small class="form-help">Agrega todas las herramientas utilizadas en este entregable</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label-inline">
+                            <input type="checkbox" id="checkbox-automatizado" name="automatizado" onchange="toggleAutomatizadoField()">
+                            <span>Automatizado</span>
+                        </label>
+                        <small class="form-help">Marca si este entregable tiene algún proceso automatizado</small>
+                    </div>
+
+                    <div class="form-group" id="campo-proceso-automatizacion" style="display: none;">
+                        <label>Proceso de Automatización</label>
+                        <textarea name="proceso_automatizacion" id="textarea-proceso-automatizacion" rows="4" placeholder="Describe el proceso de automatización:&#10;- ¿Qué herramienta automatiza? (ej: script, Zapier, Power Automate)&#10;- ¿Cuándo se ejecuta? (ej: diariamente a las 6 AM)&#10;- ¿Qué hace exactamente?"></textarea>
+                        <small class="form-help">Explica cómo funciona la automatización</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Instrucciones Técnicas</label>
+                        <textarea name="instrucciones_tecnicas" rows="5" placeholder="¿Cómo está construido este entregable?&#10;Ejemplo:&#10;- Se actualiza automáticamente a las 6 AM&#10;- Conecta a Supermetrics para Meta Ads&#10;- Los datos se procesan en BigQuery&#10;- El dashboard se visualiza en Power BI"></textarea>
+                        <small class="form-help">Describe cómo funciona y cómo está conectado</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notas de Troubleshooting</label>
+                        <textarea name="notas_troubleshooting" rows="5" placeholder="¿Qué hacer si hay errores?&#10;Ejemplo:&#10;- Si no hay datos: revisar Supermetrics > Accounts&#10;- Si Sheet falla: verificar permisos de acceso&#10;- Si BigQuery da error: revisar Query History en GCP Console"></textarea>
+                        <small class="form-help">Soluciones a problemas comunes</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estado *</label>
+                        <select name="estado" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioEntregable()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Entregable
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Marca -->
+    <div id="modal-form-marca" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus"></i> Nueva Marca</h2>
+                <button class="modal-close" onclick="cerrarFormularioMarca()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-marca" onsubmit="guardarMarca(event)">
+                    <input type="hidden" name="id_marca" value="">
+                    <input type="hidden" name="id_cliente" value="">
+                    <div class="form-group">
+                        <label>Nombre de la Marca *</label>
+                        <input type="text" name="nombre_marca" id="input-nombre-marca" required placeholder="Ej: COCA-COLA ECUADOR, FANTA MÉXICO" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select name="estado">
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Pausado">Pausado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea name="notas" rows="3" placeholder="Información adicional sobre esta marca"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioMarca()">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Marca
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario User -->
+    <div id="modal-form-user" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> Nuevo Usuario</h2>
+                <button class="modal-close" onclick="cerrarFormularioUser()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-user" onsubmit="guardarUser(event)">
+                    <input type="hidden" name="id_user">
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" name="nombre" required placeholder="Ej: Nombre Ejemplo">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" required placeholder="nombre@rangle.ec">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Usuario *</label>
+                        <select name="tipo_usuario" required>
+                            <option value="">Selecciona un tipo...</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Editor">Editor</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado *</label>
+                        <select name="estado" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioUser()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Tipo de Entregable -->
+    <div id="modal-form-tipo-entregable" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-tag"></i> Nuevo Tipo de Entregable</h2>
+                <button class="modal-close" onclick="cerrarFormularioTipoEntregable()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-tipo-entregable" onsubmit="guardarTipoEntregable(event)">
+                    <input type="hidden" name="id_tipo">
+                    <div class="form-group">
+                        <label>Nombre del Tipo *</label>
+                        <input type="text" name="nombre_tipo" required placeholder="Ej: Dashboard">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción *</label>
+                        <textarea name="descripcion" required rows="3" placeholder="Describe qué tipo de entregable es..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Icono (Emoji)</label>
+                        <div style="position: relative;">
+                            <input
+                                type="text"
+                                name="icono"
+                                id="icono-input"
+                                placeholder="Click para seleccionar un icono"
+                                maxlength="2"
+                                readonly
+                                style="cursor: pointer; padding-right: 40px; font-size: 20px; text-align: center;">
+                            <button
+                                type="button"
+                                onclick="toggleIconPicker()"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; color: #5F6368;">
+                                ▼
+                            </button>
+                        </div>
+                        <div
+                            id="icon-picker"
+                            style="display: none; margin-top: 10px; padding: 15px; background: white; border: 2px solid #e0e0e0; border-radius: 8px; max-height: 400px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <div>
+                                <!-- Iconos serán insertados por JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado *</label>
+                        <select name="estado" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioTipoEntregable()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Tipo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Gestión de Categorías -->
+    <div id="modal-gestion-categorias" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-tags"></i> Gestión de Categorías de Herramientas</h2>
+                <button class="modal-close" onclick="cerrarGestionCategorias()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <button class="btn-primary" onclick="mostrarFormularioCategoria()">
+                        <i class="fas fa-plus"></i> Nueva Categoría
+                    </button>
+                </div>
+                <div id="categorias-modal-container">
+                    <div class="loading">Cargando categorías...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Categoría -->
+    <div id="modal-form-categoria" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-tag"></i> Nueva Categoría</h2>
+                <button class="modal-close" onclick="cerrarFormularioCategoria()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-categoria" onsubmit="guardarCategoria(event)">
+                    <input type="hidden" name="id_categoria">
+                    <div class="form-group">
+                        <label>Nombre de la Categoría *</label>
+                        <input type="text" name="nombre_categoria" required placeholder="Ej: Visualización de Datos">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea name="descripcion" rows="3" placeholder="Descripción de la categoría..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Icono (Emoji)</label>
+                        <div style="position: relative;">
+                            <input
+                                type="text"
+                                name="icono"
+                                id="icono-categoria-input"
+                                placeholder="Click para seleccionar un icono"
+                                maxlength="2"
+                                readonly
+                                style="cursor: pointer; padding-right: 40px; font-size: 20px; text-align: center;">
+                            <button
+                                type="button"
+                                onclick="toggleIconPickerCategoria()"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; color: #5F6368;">
+                                ▼
+                            </button>
+                        </div>
+                        <div
+                            id="icon-picker-categoria"
+                            style="display: none; margin-top: 10px; padding: 15px; background: white; border: 2px solid #e0e0e0; border-radius: 8px; max-height: 400px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <div>
+                                <!-- Iconos serán insertados por JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado *</label>
+                        <select name="estado" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioCategoria()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Categoría
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Herramienta -->
+    <div id="modal-form-herramienta" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-tools"></i> Nueva Herramienta</h2>
+                <button class="modal-close" onclick="cerrarFormularioHerramienta()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-herramienta" onsubmit="guardarHerramienta(event)">
+                    <input type="hidden" name="id_herramienta">
+                    <div class="form-group">
+                        <label>Nombre de la Herramienta *</label>
+                        <input type="text" name="nombre_herramienta" required placeholder="Ej: Supermetrics">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría *</label>
+                        <select name="categoria" id="select-categoria-herramienta" required>
+                            <option value="">Cargando categorías...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>URL Oficial</label>
+                        <input type="url" name="url_oficial" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea name="descripcion" rows="3" placeholder="Breve descripción de la herramienta..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado *</label>
+                        <select name="estado" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioHerramienta()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Herramienta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Recurso de Conectividad -->
+    <div id="modal-form-recurso-admin" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2><i class="fas fa-plug"></i> Nuevo Recurso de Conectividad</h2>
+                <button class="modal-close" onclick="cerrarFormularioRecursoAdmin()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-recurso-admin" onsubmit="guardarRecursoAdmin(event)">
+                    <input type="hidden" name="id_recurso">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre del Recurso *</label>
+                            <input type="text" name="nombre_recurso" required placeholder="Ej: Conexión Google Analytics Principal">
+                        </div>
+                        <div class="form-group">
+                            <label>Herramienta *</label>
+                            <select name="nombre_herramienta" required id="select-herramienta-recurso">
+                                <option value="">Selecciona una herramienta...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>URL de Configuración</label>
+                        <input type="url" name="url_configuracion" placeholder="https://...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Frecuencia de Ejecución</label>
+                            <select name="frecuencia_ejecucion">
+                                <option value="">Selecciona frecuencia...</option>
+                                <option value="Tiempo Real">Tiempo Real</option>
+                                <option value="Cada hora">Cada hora</option>
+                                <option value="Cada 4 horas">Cada 4 horas</option>
+                                <option value="Diario">Diario</option>
+                                <option value="Semanal">Semanal</option>
+                                <option value="Mensual">Mensual</option>
+                                <option value="Manual">Manual</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Último Estado</label>
+                            <select name="ultimo_estado">
+                                <option value="">Selecciona estado...</option>
+                                <option value="OK">OK</option>
+                                <option value="Warning">Warning</option>
+                                <option value="Error">Error</option>
+                                <option value="Desconocido">Desconocido</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea name="notas" rows="3" placeholder="Información adicional sobre este recurso..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioRecursoAdmin()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Recurso
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Origen de Datos -->
+    <div id="modal-form-origen" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-database"></i> Nuevo Origen de Datos</h2>
+                <button class="modal-close" onclick="cerrarFormularioOrigen()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-origen" onsubmit="guardarOrigen(event)">
+                    <input type="hidden" name="id_origen">
+                    <div class="form-group">
+                        <label>Nombre del Origen *</label>
+                        <input type="text" name="nombre_origen" required placeholder="Ej: Google Ads - Cuenta Principal">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Origen *</label>
+                        <select name="tipo_origen" required>
+                            <option value="">Selecciona un tipo...</option>
+                            <option value="API">API</option>
+                            <option value="Base de Datos">Base de Datos</option>
+                            <option value="Archivo">Archivo</option>
+                            <option value="Web Scraping">Web Scraping</option>
+                            <option value="CRM">CRM</option>
+                            <option value="Plataforma de Ads">Plataforma de Ads</option>
+                            <option value="Redes Sociales">Redes Sociales</option>
+                            <option value="Analytics">Analytics</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Plataforma/Proveedor</label>
+                        <input type="text" name="plataforma" placeholder="Ej: Google Ads">
+                    </div>
+                    <div class="form-group">
+                        <label>URL de Acceso</label>
+                        <input type="url" name="url_acceso" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>Usuario/Cuenta</label>
+                        <input type="text" name="usuario_cuenta" placeholder="usuario@dominio.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Notas</label>
+                        <textarea name="notas" rows="3" placeholder="Información adicional..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado *</label>
+                        <select name="estado" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioOrigen()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Origen
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Formulario Alerta Admin -->
+    <div id="modal-form-alerta-admin" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bell"></i> Nueva Alerta</h2>
+                <button class="modal-close" onclick="cerrarFormularioAlertaAdmin()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-alerta-admin" onsubmit="guardarAlertaAdmin(event)">
+                    <input type="hidden" name="id_alerta">
+                    <div class="form-group">
+                        <label>Tipo de Alerta *</label>
+                        <select name="tipo_alerta" required>
+                            <option value="">Selecciona un tipo...</option>
+                            <option value="Falla de Ejecución">Falla de Ejecución</option>
+                            <option value="Credencial Vencida">Credencial Vencida</option>
+                            <option value="Límite de Cuota">Límite de Cuota</option>
+                            <option value="Datos Faltantes">Datos Faltantes</option>
+                            <option value="Error de Conexión">Error de Conexión</option>
+                            <option value="Alerta Manual">Alerta Manual</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Severidad *</label>
+                        <select name="severidad" required>
+                            <option value="">Selecciona severidad...</option>
+                            <option value="Crítica">Crítica</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mensaje *</label>
+                        <textarea name="mensaje" required rows="3" placeholder="Describe el problema..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Recurso Afectado</label>
+                        <select name="id_recurso" id="select-recurso-alerta">
+                            <option value="">Selecciona un recurso...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Recurso (si no está en la lista)</label>
+                        <input type="text" name="nombre_recurso" placeholder="Nombre del recurso afectado">
+                    </div>
+                    <div class="form-group">
+                        <label>Estado de la Alerta *</label>
+                        <select name="estado" required>
+                            <option value="Activa">Activa</option>
+                            <option value="En Proceso">En Proceso</option>
+                            <option value="Resuelta">Resuelta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Resolución/Notas</label>
+                        <textarea name="resolucion" rows="3" placeholder="Acciones tomadas o notas..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="cerrarFormularioAlertaAdmin()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Guardar Alerta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Desarrollado por <strong>Analítica RAM</strong> by Santiago Tito</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="config.js?v=113"></script>
+    <script src="icon-picker.js?v=113"></script>
+    <script src="admin-functions.js?v=113"></script>
+    <script src="categorias-functions.js?v=113"></script>
+    <script src="validaciones-functions.js?v=113"></script>
+    <script src="app.js?v=113"></script>
+
+    <script>
+        // Cargar dashboard automáticamente al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                cargarDashboardValidacion();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+ID_Origen,ID_Cliente,Nombre_Cliente,Tipo_Origen,Nombre_Origen,Identificador,Credenciales_Ubicacion,URL_Acceso,Contacto_Acceso,Estado,Notas,Ultima_Actualizacion,Actualizado_Por
+1,1,=VLOOKUP(B2;Clientes!A:B;2;0),Facebook Ads,FB Ads - Cuenta Principal,act_123456789,1Password - Vault Marketing,https://business.facebook.com/adsmanager/manage/accounts?act=123456789,admin@cliente.com,Activo,,2024-12-30 15:00,admin@agency.com

@@ -1,0 +1,2 @@
+ID_Alerta,ID_Recurso,Nombre_Recurso,Tipo_Alerta,Severidad,Mensaje,Estado,Fecha_Deteccion,Fecha_Resolucion,Resuelto_Por,Notas_Resolucion
+1,1,=VLOOKUP(B2;Recursos_Conectividad!A:F;6;0),Flow Caído,Crítica,El flow no ha corrido en las últimas 24 horas,Activa,2024-12-30 09:00:00,,,

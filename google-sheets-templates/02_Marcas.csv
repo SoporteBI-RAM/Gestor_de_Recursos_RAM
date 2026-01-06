@@ -1,0 +1,3 @@
+ID_Marca,ID_Cliente,Nombre_Cliente,Nombre_Marca,Estado,Notas,Fecha_Creacion,Ultima_Actualizacion,Actualizado_Por
+1,1,Coca-Cola Company,Coca-Cola México,Activo,Marca principal en México,2024-01-15 10:00,2024-12-30 15:00,admin@agency.com
+2,1,Coca-Cola Company,Fanta México,Activo,Línea de sabores,2024-01-15 10:00,2024-12-30 15:00,admin@agency.com

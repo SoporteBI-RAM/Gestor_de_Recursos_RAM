@@ -1,0 +1,2 @@
+ID_Recurso,ID_Entregable,Nombre_Entregable,ID_Herramienta,Nombre_Herramienta,Nombre_Recurso,Tipo_Recurso,URL_Configuracion,Parametros_Config,Frecuencia_Ejecucion,Ultimo_Estado,Fecha_Ultima_Ejecucion,Notas,Ultima_Actualizacion,Actualizado_Por
+1,1,=VLOOKUP(B2;Entregables!A:D;4;0),1,=VLOOKUP(D2;Herramientas_Catalogo!A:B;2;0),Flow FB Ads → BigQuery,Flow,https://hub.supermetrics.com/flows/ejemplo-001,"{""dataset"":""marketing"",""table"":""fb_ads""}",Diario 6:00 AM,OK,2024-12-30 06:05,,2024-12-30 15:00,sistema@agency.com
