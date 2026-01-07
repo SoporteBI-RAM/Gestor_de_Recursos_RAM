@@ -1348,7 +1348,23 @@ async function enviarAlScript(payload) {
 
     // Agregar usuario al payload si no existe
     if (!payload.user) {
-        payload.user = 'Web App User';
+        // Intentar obtener usuario de la sesión
+        let usuario = 'Web App User';
+
+        if (typeof window.obtenerSesion === 'function') {
+            const sesion = window.obtenerSesion();
+            if (sesion && sesion.nombre) usuario = sesion.nombre;
+        } else {
+            const sesionStr = localStorage.getItem('sesion_ram');
+            if (sesionStr) {
+                try {
+                    const sesion = JSON.parse(sesionStr);
+                    if (sesion.nombre) usuario = sesion.nombre;
+                } catch (e) { }
+            }
+        }
+
+        payload.user = usuario;
     }
 
     console.log('📤 Enviando al servidor:', JSON.stringify(payload, null, 2));
@@ -1400,10 +1416,17 @@ async function enviarAlScriptCORS(action, data) {
         throw new Error('SCRIPT_URL no configurado en config.js');
     }
 
+    // Obtener usuario actual
+    let usuario = 'Web App User';
+    if (typeof window.obtenerSesion === 'function') {
+        const sesion = window.obtenerSesion();
+        if (sesion && sesion.nombre) usuario = sesion.nombre;
+    }
+
     const payload = {
         action: action,
         data: data,
-        user: 'Web App User'
+        user: usuario
     };
 
     try {
@@ -2004,6 +2027,12 @@ function actualizarCampoDiaValidacion(frecuencia) {
 }
 
 function editarEntregable(idEntregable) {
+    // DIAGNÓSTICO DE DUPLICADOS
+    const coincidencias = appState.entregables.filter(e => String(e.ID_Entregable) === String(idEntregable));
+    if (coincidencias.length > 1) {
+        alert(`⚠️ ERROR DE DATOS DETECTADO:\n\nHay ${coincidencias.length} entregables con el mismo ID (${idEntregable}).\n\nEsto causa que siempre se abra el primero.\n\nPor favor, ve a la hoja de cálculo "Entregables" y asegúrate de que cada fila tenga un ID único en la columna A.`);
+    }
+
     const entregable = appState.entregables.find(e => e.ID_Entregable == idEntregable);
     if (!entregable) {
         mostrarNotificacion('Entregable no encontrado', 'error');
@@ -2282,7 +2311,9 @@ async function guardarEntregable(event) {
         const nombreNormalizado = nombreEntregable.toLowerCase();
         const duplicado = appState.entregables.find(e => {
             if (e.ID_Marca != idMarca) return false;
-            if (entregableId && e.ID_Entregable == entregableId) return false;
+            // IMPORTANTE: Convertir a String para comparar IDs, ya que pueden venir como number o string
+            if (entregableId && String(e.ID_Entregable) === String(entregableId)) return false;
+
             const nombreExistente = (e.Nombre_Entregable || '').trim().toLowerCase();
             return nombreExistente === nombreNormalizado;
         });
@@ -2320,6 +2351,8 @@ async function guardarEntregable(event) {
         // MOSTRAR BLOQUEO CON SPINNER
         mostrarBloqueoOperacion(isEdit ? 'Actualizando entregable...' : 'Creando entregable...');
 
+        let tempEntregable = null;
+
         // ACTUALIZACIÓN OPTIMISTA: Actualizar UI INMEDIATAMENTE
         if (isEdit) {
             const index = appState.entregables.findIndex(e => e.ID_Entregable == entregableId);
@@ -2327,7 +2360,7 @@ async function guardarEntregable(event) {
                 appState.entregables[index] = { ...appState.entregables[index], ...entregableData };
             }
         } else {
-            const tempEntregable = {
+            tempEntregable = {
                 ID_Entregable: `temp_${Date.now()}`,
                 ...entregableData,
                 Fecha_Creacion: new Date().toISOString()
@@ -2362,7 +2395,10 @@ async function guardarEntregable(event) {
 
                 // Si es creación, actualizar ID temporal con ID real
                 if (!isEdit && result.data && result.data.id) {
-                    const index = appState.entregables.findIndex(e => String(e.ID_Entregable).startsWith('temp_'));
+                    // Usar el ID temporal específico que creamos (tempEntregable.ID_Entregable)
+                    // Nota: tempEntregable está definido en el bloque else anterior, necesitamos acceder a él.
+                    // Corrección: buscar por el ID temporal específico guardado en appState
+                    const index = appState.entregables.findIndex(e => String(e.ID_Entregable) === String(tempEntregableId));
                     if (index !== -1) {
                         appState.entregables[index].ID_Entregable = result.data.id;
                         localStorage.setItem('entregables', JSON.stringify(appState.entregables));
