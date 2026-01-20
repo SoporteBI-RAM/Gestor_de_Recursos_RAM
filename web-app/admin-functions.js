@@ -113,7 +113,7 @@ async function guardarHerramienta(event) {
     const herrId = formData.get('id_herramienta');
 
     const herrData = {
-        Nombre_Herramienta: formData.get('nombre_herramienta'),
+        Nombre_Herramienta: (formData.get('nombre_herramienta') || '').trim().toUpperCase(),
         Categoria: formData.get('categoria'),
         URL_Oficial: formData.get('url_oficial'),
         Descripcion: formData.get('descripcion'),
@@ -148,7 +148,6 @@ async function guardarHerramienta(event) {
         cerrarFormularioHerramienta(true);
         renderizarTablaHerramientas();
 
-        // Enviar al servidor en segundo plano (sin await)
         enviarAlScript({
             action: isEdit ? 'update' : 'add',
             sheetName: CONFIG.SHEETS.HERRAMIENTAS,
@@ -156,7 +155,6 @@ async function guardarHerramienta(event) {
             rowId: herrId || ''
         }).then(result => {
             if (result.status === 'success') {
-                console.log('✅ Herramienta guardada');
                 if (!isEdit && result.data && result.data.id) {
                     // Reemplazar ID temporal con ID real
                     const index = appState.herramientas.findIndex(h => String(h.ID_Herramienta).startsWith('temp_'));
@@ -642,7 +640,7 @@ function mostrarFormularioTipoEntregable() {
 
             <div class="form-group">
                 <label>Nombre del Tipo *</label>
-                <input type="text" name="nombre_tipo" required placeholder="Ej: Power BI">
+                <input type="text" name="nombre_tipo" required placeholder="Ej: POWER BI" style="text-transform: uppercase;">
             </div>
 
             <div class="form-group">
@@ -673,7 +671,7 @@ async function guardarTipoEntregable(event) {
     const formData = new FormData(form);
 
     const tipoData = {
-        Nombre_Tipo: formData.get('nombre_tipo'),
+        Nombre_Tipo: (formData.get('nombre_tipo') || '').trim().toUpperCase(),
         Descripcion: formData.get('descripcion'),
         Estado: formData.get('estado')
     };
@@ -887,7 +885,7 @@ function mostrarFormularioCategoriaHerramienta() {
         <form id="form-categoria-herramienta" onsubmit="guardarCategoriaHerramienta(event)">
             <div class="form-group">
                 <label>Nombre de la Categoría *</label>
-                <input type="text" name="nombre_categoria" required placeholder="Ej: Visualización">
+                <input type="text" name="nombre_categoria" required placeholder="Ej: VISUALIZACIÓN" style="text-transform: uppercase;">
             </div>
 
             <div class="form-group">
@@ -918,7 +916,7 @@ async function guardarCategoriaHerramienta(event) {
     const formData = new FormData(form);
 
     const categoriaData = {
-        Nombre_Categoria: formData.get('nombre_categoria'),
+        Nombre_Categoria: (formData.get('nombre_categoria') || '').trim().toUpperCase(),
         Descripcion: formData.get('descripcion'),
         Estado: formData.get('estado')
     };
@@ -992,7 +990,7 @@ async function editarCategoriaHerramienta(id) {
         <form id="form-categoria-herramienta" onsubmit="actualizarCategoriaHerramienta(event, ${id})">
             <div class="form-group">
                 <label>Nombre de la Categoría *</label>
-                <input type="text" name="nombre_categoria" required value="${cat.Nombre_Categoria || ''}">
+                <input type="text" name="nombre_categoria" required value="${cat.Nombre_Categoria || ''}" style="text-transform: uppercase;">
             </div>
 
             <div class="form-group">
@@ -1023,7 +1021,7 @@ async function actualizarCategoriaHerramienta(event, id) {
     const formData = new FormData(form);
 
     const categoriaData = {
-        Nombre_Categoria: formData.get('nombre_categoria'),
+        Nombre_Categoria: (formData.get('nombre_categoria') || '').trim().toUpperCase(),
         Descripcion: formData.get('descripcion'),
         Estado: formData.get('estado')
     };

@@ -367,7 +367,8 @@
 
                     <div class="form-group">
                         <label>Nombre del Entregable *</label>
-                        <input type="text" name="nombre_entregable" required placeholder="Ej: Dashboard Ventas Meta">
+                        <input type="text" name="nombre_entregable" required placeholder="Ej: DASHBOARD VENTAS META"
+                            style="text-transform: uppercase;">
                     </div>
 
                     <div class="form-group">
@@ -394,6 +395,9 @@
                             <option value="Semanal">Semanal</option>
                             <option value="Quincenal">Quincenal</option>
                             <option value="Mensual">Mensual</option>
+                            <option value="Trimestral">Trimestral</option>
+                            <option value="Semestral">Semestral</option>
+                            <option value="Anual">Anual</option>
                         </select>
                     </div>
 
@@ -413,8 +417,9 @@
                             <table class="herramientas-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 35%">Herramienta</th>
-                                        <th style="width: 55%">URL / Comentario</th>
+                                        <th style="width: 30%">Herramienta</th>
+                                        <th style="width: 35%">URL</th>
+                                        <th style="width: 25%">Comentario</th>
                                         <th style="width: 10%">Acciones</th>
                                     </tr>
                                 </thead>
@@ -430,13 +435,26 @@
                         <small class="form-help">Agrega todas las herramientas utilizadas en este entregable</small>
                     </div>
 
-                    <div class="form-group">
-                        <label class="checkbox-label-inline">
-                            <input type="checkbox" id="checkbox-automatizado" name="automatizado"
+                    <div class="form-row" style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Nivel de Automatización *</label>
+                            <select name="nivel_automatizacion" id="select-nivel-automatizacion" required
                                 onchange="toggleAutomatizadoField()">
-                            <span>Automatizado</span>
-                        </label>
-                        <small class="form-help">Marca si este entregable tiene algún proceso automatizado</small>
+                                <option value="Manual">Manual</option>
+                                <option value="Semiautomatizado">Semiautomatizado</option>
+                                <option value="Automatizado">Automatizado</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Validación <i class="fas fa-info-circle"
+                                    title="Indica si el entregable está al 100% o tiene errores"></i> *</label>
+                            <select name="validacion_estado" required>
+                                <option value="OK">✅ OK</option>
+                                <option value="Con Errores">❌ Con Errores</option>
+                                <option value="En Desarrollo">🛠️ En Desarrollo</option>
+                                <option value="En Revisión">🔍 En Revisión</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-group" id="campo-proceso-automatizacion" style="display: none;">
@@ -444,6 +462,15 @@
                         <textarea name="proceso_automatizacion" id="textarea-proceso-automatizacion" rows="4"
                             placeholder="Describe el proceso de automatización:&#10;- ¿Qué herramienta automatiza? (ej: script, Zapier, Power Automate)&#10;- ¿Cuándo se ejecuta? (ej: diariamente a las 6 AM)&#10;- ¿Qué hace exactamente?"></textarea>
                         <small class="form-help">Explica cómo funciona la automatización</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Responsable(s) *</label>
+                        <div id="responsables-checkboxes-container" class="checkboxes-grid-container">
+                            <div class="loading-small">Cargando usuarios...</div>
+                        </div>
+                        <input type="hidden" name="responsables" id="hidden-responsables" required>
+                        <small class="form-help">Selecciona los usuarios responsables de este entregable</small>
                     </div>
 
                     <div class="form-group">
@@ -538,7 +565,8 @@
                     <input type="hidden" name="id_user">
                     <div class="form-group">
                         <label>Nombre Completo *</label>
-                        <input type="text" name="nombre" required placeholder="Ej: Nombre Ejemplo">
+                        <input type="text" name="nombre" required placeholder="Ej: NOMBRE EJEMPLO"
+                            style="text-transform: uppercase;">
                     </div>
                     <div class="form-group">
                         <label>Email *</label>
@@ -610,7 +638,8 @@
                     <input type="hidden" name="id_categoria">
                     <div class="form-group">
                         <label>Nombre de la Categoría *</label>
-                        <input type="text" name="nombre_categoria" required placeholder="Ej: Visualización de Datos">
+                        <input type="text" name="nombre_categoria" required placeholder="Ej: VISUALIZACIÓN DE DATOS"
+                            style="text-transform: uppercase;">
                     </div>
                     <div class="form-group">
                         <label>Descripción</label>
@@ -668,7 +697,8 @@
                     <input type="hidden" name="id_herramienta">
                     <div class="form-group">
                         <label>Nombre de la Herramienta *</label>
-                        <input type="text" name="nombre_herramienta" required placeholder="Ej: Supermetrics">
+                        <input type="text" name="nombre_herramienta" required placeholder="Ej: SUPERMETRICS"
+                            style="text-transform: uppercase;">
                     </div>
                     <div class="form-group">
                         <label>Categoría *</label>
@@ -744,7 +774,8 @@
                         <div class="form-group">
                             <label>Nombre del Recurso *</label>
                             <input type="text" name="nombre_recurso" required
-                                placeholder="Ej: Conexión Google Analytics Principal">
+                                placeholder="Ej: CONEXIÓN GOOGLE ANALYTICS PRINCIPAL"
+                                style="text-transform: uppercase;">
                         </div>
                         <div class="form-group">
                             <label>Herramienta *</label>
@@ -814,8 +845,8 @@
                     <input type="hidden" name="id_origen">
                     <div class="form-group">
                         <label>Nombre del Origen *</label>
-                        <input type="text" name="nombre_origen" required
-                            placeholder="Ej: Google Ads - Cuenta Principal">
+                        <input type="text" name="nombre_origen" required placeholder="Ej: GOOGLE ADS - CUENTA PRINCIPAL"
+                            style="text-transform: uppercase;">
                     </div>
                     <div class="form-group">
                         <label>Tipo de Origen *</label>

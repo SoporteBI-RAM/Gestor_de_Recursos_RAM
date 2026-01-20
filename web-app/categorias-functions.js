@@ -108,13 +108,11 @@ async function guardarCategoria(event) {
     const originalBtnText = submitBtn.innerHTML;
 
     const categoriaData = {
-        Nombre_Categoria: formData.get('nombre_categoria'),
+        Nombre_Categoria: (formData.get('nombre_categoria') || '').trim().toUpperCase(),
         Descripcion: formData.get('descripcion'),
         Icono: formData.get('icono') || '📁',
         Estado: formData.get('estado')
     };
-
-    console.log('📋 Datos de categoría a enviar:', categoriaData);
 
     try {
         const isEdit = !!categoriaId;

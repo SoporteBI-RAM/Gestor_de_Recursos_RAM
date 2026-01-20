@@ -137,11 +137,25 @@ function renderizarDashboardValidacion(entregables, validaciones, clientes, marc
         return `
                     <div class="validacion-card ${validacionHoy ? 'validado' : ''}">
                         <div class="validacion-header">
-                            <div class="validacion-titulo">
-                                <h3>${ent.Nombre_Entregable}</h3>
-                                <span class="badge">${ent.Tipo_Entregable}</span>
-                                ${ent.Frecuencia_Validacion ? `<span class="badge badge-secondary">${ent.Frecuencia_Validacion}</span>` : ''}
-                            </div>
+                                <div class="validacion-titulo">
+                                    <h3>${ent.Nombre_Entregable}</h3>
+                                    <span class="badge">${ent.Tipo_Entregable}</span>
+                                    
+                                    <span style="display: inline-flex; gap: 4px; align-items: center; margin: 0 8px; padding-left: 8px; border-left: 1px solid #ddd;">
+                                        <span class="badge badge-${(ent.Estado || 'Activo').toLowerCase()}">${ent.Estado || 'Activo'}</span>
+                                        <span class="badge badge-${getValidacionBadgeClass(ent.Validacion_Estado)}">${ent.Validacion_Estado || 'OK'}</span>
+                                        <span class="badge badge-secondary">${ent.Frecuencia_Validacion || '-'}</span>
+                                    </span>
+
+                                    <span class="badge" style="background: #e8f0fe; color: #1967d2;">
+                                        <i class="fas fa-robot"></i> ${ent.Nivel_Automatizacion || 'Manual'}
+                                    </span>
+                                    ${ent.Responsables ? `
+                                        <span class="badge" style="background: #3c4043; color: white;">
+                                            <i class="fas fa-user"></i> ${ent.Responsables}
+                                        </span>
+                                    ` : ''}
+                                </div>
                             <div class="validacion-meta">
                                 <span><i class="fas fa-building"></i> ${cliente?.Nombre_Cliente || 'Sin cliente'}</span>
                                 ${marca ? `<span><i class="fas fa-tag"></i> ${marca.Nombre_Marca}</span>` : ''}
@@ -175,7 +189,22 @@ function renderizarDashboardValidacion(entregables, validaciones, clientes, marc
                                 <details>
                                     <summary><i class="fas fa-link"></i> URLs de Fuentes</summary>
                                     <div class="detalles-content">
-                                        <pre>${ent.URLs_Fuentes}</pre>
+                                        <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                                            ${(() => {
+                    try {
+                        const tools = JSON.parse(ent.URLs_Fuentes);
+                        return tools.map(t => `
+                                                        <li>
+                                                            <strong>${t.herramienta}:</strong> 
+                                                            ${t.url ? `<a href="${t.url}" target="_blank">Enlace</a>` : '-'}
+                                                            ${t.comentario ? ` <small>(${t.comentario})</small>` : ''}
+                                                        </li>
+                                                    `).join('');
+                    } catch (e) {
+                        return `<li>${ent.URLs_Fuentes}</li>`;
+                    }
+                })()}
+                                        </ul>
                                     </div>
                                 </details>
                             ` : ''}

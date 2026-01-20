@@ -13,9 +13,9 @@
     --secondary-bg: #E5E7EB;
     --text-primary: #1F2937;
     --text-secondary: #6b6a66;
-    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05), 0 1px 3px 1px rgba(0,0,0,0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 1px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -130,12 +130,42 @@ body {
 }
 
 .badge {
-    background-color: var(--danger-color);
-    color: white;
+    display: inline-block;
+    padding: 2px 8px;
     border-radius: 10px;
-    padding: 2px 6px;
     font-size: 11px;
+    font-weight: 500;
     margin-left: 4px;
+    color: white;
+    background-color: var(--secondary-color);
+}
+
+.badge-success,
+.badge-activo {
+    background-color: #34A853 !important;
+}
+
+.badge-danger,
+.badge-inactivo,
+.badge-error {
+    background-color: #EA4335 !important;
+}
+
+.badge-warning,
+.badge-pendiente,
+.badge-revisión,
+.badge-desarrollo {
+    background-color: #FBBC04 !important;
+    color: #3C4043 !important;
+}
+
+.badge-info,
+.badge-entregado {
+    background-color: #4285F4 !important;
+}
+
+.badge-secondary {
+    background-color: #5F6368 !important;
 }
 
 /* ========================================
@@ -157,8 +187,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ========================================
@@ -305,19 +342,45 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-.alerta-card.critica { border-left-color: #CC0000; background: #FFF5F5; }
-.alerta-card.alta { border-left-color: var(--danger-color); background: #FFF8F5; }
-.alerta-card.media { border-left-color: var(--accent-color); background: #FFFEF5; }
-.alerta-card.baja { border-left-color: var(--secondary-color); background: #F5FFF8; }
+.alerta-card.critica {
+    border-left-color: #CC0000;
+    background: #FFF5F5;
+}
+
+.alerta-card.alta {
+    border-left-color: var(--danger-color);
+    background: #FFF8F5;
+}
+
+.alerta-card.media {
+    border-left-color: var(--accent-color);
+    background: #FFFEF5;
+}
+
+.alerta-card.baja {
+    border-left-color: var(--secondary-color);
+    background: #F5FFF8;
+}
 
 .alerta-icon {
     font-size: 24px;
 }
 
-.alerta-card.critica .alerta-icon { color: #CC0000; }
-.alerta-card.alta .alerta-icon { color: var(--danger-color); }
-.alerta-card.media .alerta-icon { color: var(--accent-color); }
-.alerta-card.baja .alerta-icon { color: var(--secondary-color); }
+.alerta-card.critica .alerta-icon {
+    color: #CC0000;
+}
+
+.alerta-card.alta .alerta-icon {
+    color: var(--danger-color);
+}
+
+.alerta-card.media .alerta-icon {
+    color: var(--accent-color);
+}
+
+.alerta-card.baja .alerta-icon {
+    color: var(--secondary-color);
+}
 
 .alerta-info {
     flex: 1;
@@ -559,8 +622,15 @@ body {
 }
 
 @keyframes slideUp {
-    from { transform: translateY(50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .modal-header {
@@ -826,7 +896,7 @@ body {
     background: white;
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
@@ -866,13 +936,13 @@ body {
     background: white;
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border-left: 4px solid #E8EAED;
     transition: all 0.2s;
 }
 
 .validacion-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .validacion-card.validado {
@@ -1094,7 +1164,7 @@ body {
 .main-nav {
     background: white;
     border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -1411,7 +1481,9 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Animaciones de entrada */
@@ -1420,6 +1492,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1430,11 +1503,25 @@ body {
     animation: fadeIn 0.4s ease-out;
 }
 
-.validacion-card:nth-child(1) { animation-delay: 0.1s; }
-.validacion-card:nth-child(2) { animation-delay: 0.2s; }
-.validacion-card:nth-child(3) { animation-delay: 0.3s; }
-.validacion-card:nth-child(4) { animation-delay: 0.4s; }
-.validacion-card:nth-child(5) { animation-delay: 0.5s; }
+.validacion-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.validacion-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.validacion-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.validacion-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.validacion-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
 
 /* ========================================
    TABLAS DE ADMINISTRACIÓN
@@ -1446,7 +1533,7 @@ body {
     background: white;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tabla-admin thead {
@@ -1573,7 +1660,7 @@ body {
     accent-color: var(--primary-color);
 }
 
-.checkbox-label input[type="checkbox"]:checked + span {
+.checkbox-label input[type="checkbox"]:checked+span {
     font-weight: 600;
     color: var(--primary-color);
 }
@@ -1581,6 +1668,38 @@ body {
 .checkbox-label span {
     font-size: 14px;
     color: var(--text-primary);
+}
+
+.checkboxes-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.checkbox-item-wrapper {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    transition: all 0.2s;
+}
+
+.checkbox-item-wrapper:hover {
+    border-color: var(--primary-color);
+    background: #f0f7ff;
+}
+
+.loading-small {
+    color: #666;
+    font-size: 13px;
+    font-style: italic;
 }
 
 /* ========================================
@@ -1790,7 +1909,7 @@ body {
 .link-entregable:hover {
     background-color: #d2e3fc;
     text-decoration: none;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* ========================================
@@ -1888,8 +2007,8 @@ body {
 }
 
 .warning-box {
-    border-left-color: var(--danger-color);
-    background: #fff5f5;
+    border-left-color: #FBBC04;
+    background: #FFFBEA;
 }
 
 .herramientas-table {
@@ -1918,4 +2037,81 @@ body {
 
 .text-link:hover {
     text-decoration: underline;
+}
+
+/* ========================================
+   AGRUPACIÓN JERÁRQUICA DE ENTREGABLES
+   ======================================== */
+
+.entregables-grupo {
+    margin: 20px 0 10px 0;
+    padding: 6px 12px;
+    background: #f1f3f4;
+    border-radius: 4px;
+    border-left: 4px solid #5f6368;
+}
+
+.entregables-grupo-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #3c4043;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.entregables-grupo.activo {
+    border-left-color: #34a853;
+    background: #e6f4ea;
+}
+
+.entregables-grupo.activo .entregables-grupo-label {
+    color: #137333;
+}
+
+.entregables-grupo.inactivo {
+    border-left-color: #dadce0;
+    background: #f8f9fa;
+}
+
+.entregables-grupo.inactivo .entregables-grupo-label {
+    color: #70757a;
+}
+
+.entregables-subgrupo {
+    margin: 15px 0 8px 10px;
+}
+
+.entregables-subgrupo-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #5f6368;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    background: #f1f3f4;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-left: 3px solid #5f6368;
+}
+
+.entregables-subgrupo.val-ok .entregables-subgrupo-label {
+    color: #137333;
+    background: #e6f4ea;
+    border-left-color: #34a853;
+}
+
+.entregables-subgrupo.val-warning .entregables-subgrupo-label {
+    color: #b06000;
+    background: #feefc3;
+    border-left-color: #fbbc04;
+}
+
+.entregables-subgrupo.val-error .entregables-subgrupo-label {
+    color: #c5221f;
+    border-bottom-color: #fad2cf;
 }

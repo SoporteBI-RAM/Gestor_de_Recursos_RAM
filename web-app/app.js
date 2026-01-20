@@ -694,33 +694,7 @@ function renderizarTablaClientes() {
                                                                 <h5 style="margin: 8px 0; color: #5F6368; font-size: 13px;">
                                                                     <i class="fas fa-file-alt"></i> Entregables de ${marca.Nombre_Marca}
                                                                 </h5>
-                                                                ${entregablesMarca.map(entregable => `
-                                                                    <div class="entregable-item">
-                                                                        <div class="entregable-info">
-                                                                            <i class="fas fa-file-alt"></i>
-                                                                            <strong>${entregable.Nombre_Entregable}</strong>
-                                                                            <span class="badge badge-secondary">${entregable.Tipo_Entregable || 'Sin tipo'}</span>
-                                                                            <span class="badge badge-${(entregable.Estado || 'Activo').toLowerCase()}">${entregable.Estado || 'Activo'}</span>
-                                                                            <span class="entregable-frecuencia">${entregable.Frecuencia_Validacion || '-'}</span>
-                                                                            ${entregable.url_entregable ? `
-                                                                                <a href="${entregable.url_entregable}" target="_blank" class="link-entregable" title="Ver Entregable">
-                                                                                    <i class="fas fa-external-link-alt"></i> Link
-                                                                                </a>
-                                                                            ` : ''}
-                                                                        </div>
-                                                                        <div class="entregable-acciones">
-                                                                            <button class="btn-icon-small" onclick="verDetalleEntregable('${entregable.ID_Entregable}')" title="Ver detalle">
-                                                                                <i class="fas fa-eye"></i>
-                                                                            </button>
-                                                                            <button class="btn-icon-small" onclick="editarEntregable('${entregable.ID_Entregable}')" title="Editar">
-                                                                                <i class="fas fa-edit"></i>
-                                                                            </button>
-                                                                            <button class="btn-icon-small btn-danger" onclick="eliminarEntregable('${entregable.ID_Entregable}')" title="Eliminar">
-                                                                                <i class="fas fa-trash"></i>
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                `).join('')}
+                                                                 ${renderizarListaEntregablesAgrupados(entregablesMarca)}
                                                             </div>
                                                         </div>
                                                     ` : ''}
@@ -879,82 +853,147 @@ function verDetalleCliente(idCliente) {
                 `;
             } else {
                 html += `<div style="margin-top: 12px;">`;
-                entregablesMarca.forEach(entregable => {
-                    const recursos = appState.recursos.filter(r => r.ID_Entregable == entregable.ID_Entregable);
+
+                // Agrupar entregables de la marca
+                const gruposEstadoMarca = {
+                    'Activos': entregablesMarca.filter(e => (e.Estado || 'Activo') === 'Activo'),
+                    'Inactivos': entregablesMarca.filter(e => (e.Estado || 'Activo') !== 'Activo')
+                };
+
+                const ordenFrecuenciaMarca = {
+                    'Anual': 1, 'Semestral': 2, 'Trimestral': 3, 'Mensual': 4,
+                    'Quincenal': 5, 'Semanal': 6, 'Diario': 7, 'Manual': 8, '-': 9
+                };
+
+                for (const [nombreG, itemsG] of Object.entries(gruposEstadoMarca)) {
+                    if (itemsG.length === 0) continue;
+
+                    const claseG = nombreG === 'Activos' ? 'activo' : 'inactivo';
+                    const iconoG = nombreG === 'Activos' ? 'fa-check-circle' : 'fa-times-circle';
 
                     html += `
-                        <div class="arbol-entregable" style="margin-bottom: 12px;">
-                            <div class="arbol-header" style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-                                    <i class="fas fa-chart-line"></i>
-                                    <strong>${entregable.Nombre_Entregable}</strong>
-                                    ${entregable.URL_Visualizacion ? `
-                                        <button class="btn-icon" onclick="copiarURL('${entregable.URL_Visualizacion}')" title="Copiar URL">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                        <a href="${entregable.URL_Visualizacion}" target="_blank" class="btn-icon" title="Abrir">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </a>
-                                    ` : ''}
-                                </div>
-                                <div style="display: flex; gap: 4px;">
-                                    <button class="btn-icon-small" onclick="editarEntregable('${entregable.ID_Entregable}')" title="Editar entregable">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon-small btn-danger" onclick="eliminarEntregable('${entregable.ID_Entregable}')" title="Eliminar entregable">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                        <div class="entregables-grupo ${claseG}">
+                            <div class="entregables-grupo-label">
+                                <i class="fas ${iconoG}"></i> ${nombreG} (${itemsG.length})
                             </div>
-                            <div class="arbol-meta">
-                                <span><i class="fas fa-sync-alt"></i> ${entregable.Frecuencia_Actualizacion || '-'}</span>
-                                <span><i class="fas fa-user"></i> Interno: ${entregable.Responsable_Interno || '-'}</span>
-                                ${entregable.Contacto_Cliente ? `<span><i class="fas fa-user-tie"></i> Cliente: ${entregable.Contacto_Cliente}${entregable.Email_Cliente ? ` (${entregable.Email_Cliente})` : ''}</span>` : ''}
-                            </div>
+                        </div>
                     `;
 
-                    if (recursos.length > 0) {
-                        html += '<div class="arbol-recursos">';
-                        recursos.forEach(recurso => {
-                            const estadoClass = (recurso.Ultimo_Estado || 'desconocido').toLowerCase();
-                            const estadoIcon = estadoClass === 'ok' ? 'check-circle' : estadoClass === 'error' ? 'times-circle' : 'exclamation-circle';
+                    // Sub-agrupar por Validación
+                    const subgruposVal = {};
+                    itemsG.forEach(e => {
+                        const val = e.Validacion_Estado || 'OK';
+                        if (!subgruposVal[val]) subgruposVal[val] = [];
+                        subgruposVal[val].push(e);
+                    });
+
+                    const keysVal = Object.keys(subgruposVal).sort((a, b) => {
+                        if (a === 'Con Error') return -1;
+                        if (b === 'Con Error') return 1;
+                        return a.localeCompare(b);
+                    });
+
+                    keysVal.forEach(valK => {
+                        const itemsValK = subgruposVal[valK].sort((a, b) => {
+                            const frecA = ordenFrecuenciaMarca[a.Frecuencia_Validacion] || 99;
+                            const frecB = ordenFrecuenciaMarca[b.Frecuencia_Validacion] || 99;
+                            return frecA - frecB;
+                        });
+
+                        // Determinar clase de color
+                        let valClase = 'val-secondary';
+                        const vLower = valK.toLowerCase();
+                        if (vLower.includes('ok')) valClase = 'val-ok';
+                        else if (vLower.includes('error')) valClase = 'val-error';
+                        else if (vLower.includes('revisión') || vLower.includes('desarrollo') || vLower.includes('pendiente')) valClase = 'val-warning';
+
+                        html += `
+                            <div class="entregables-subgrupo ${valClase}">
+                                <div class="entregables-subgrupo-label">
+                                    <i class="fas fa-shield-alt"></i> Validación: ${valK} (${itemsValK.length})
+                                </div>
+                        `;
+
+                        itemsValK.forEach(entregable => {
+                            const recursos = appState.recursos.filter(r => r.ID_Entregable == entregable.ID_Entregable);
 
                             html += `
-                                <div class="arbol-recurso">
-                                    <div class="recurso-header">
-                                        <span class="recurso-icon">${recurso.Nombre_Herramienta ? getHerramientaIcon(recurso.Nombre_Herramienta) : '🔗'}</span>
-                                        <strong>${recurso.Nombre_Recurso}</strong>
-                                        <span class="badge badge-${estadoClass}">
-                                            <i class="fas fa-${estadoIcon}"></i> ${recurso.Ultimo_Estado || 'Desconocido'}
-                                        </span>
-                                    </div>
-                                    ${recurso.URL_Configuracion ? `
-                                        <div class="recurso-url">
-                                            <i class="fas fa-link"></i>
-                                            <code>${truncarURL(recurso.URL_Configuracion, 60)}</code>
-                                            <button class="btn-icon" onclick="copiarURL('${recurso.URL_Configuracion}')" title="Copiar URL">
+                                <div class="arbol-entregable" style="margin-bottom: 12px;">
+                                    <div class="arbol-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                                            <i class="fas fa-chart-line"></i>
+                                            <strong>${entregable.Nombre_Entregable}</strong>
+                                            ${entregable.URL_Visualizacion ? `
+                                                <button class="btn-icon" onclick="copiarURL('${entregable.URL_Visualizacion}')" title="Copiar URL">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <a href="${entregable.URL_Visualizacion}" target="_blank" class="btn-icon" title="Abrir">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                            ` : ''}
+                                            <span class="badge badge-secondary" style="font-size: 10px;">${entregable.Tipo_Entregable || 'Sin tipo'}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 4px;">
+                                            <button class="btn-icon-small" onclick="duplicarEntregable('${entregable.ID_Entregable}')" title="Duplicar entregable">
                                                 <i class="fas fa-copy"></i>
                                             </button>
-                                            <a href="${recurso.URL_Configuracion}" target="_blank" class="btn-icon" title="Abrir">
-                                                <i class="fas fa-external-link-alt"></i>
-                                            </a>
+                                            <button class="btn-icon-small" onclick="editarEntregable('${entregable.ID_Entregable}')" title="Editar entregable">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-icon-small btn-danger" onclick="eliminarEntregable('${entregable.ID_Entregable}')" title="Eliminar entregable">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
-                                    ` : ''}
-                                    <div class="recurso-meta">
-                                        <span><i class="fas fa-clock"></i> ${recurso.Frecuencia_Ejecucion || '-'}</span>
-                                        ${recurso.Fecha_Ultima_Ejecucion ? `<span><i class="fas fa-calendar"></i> ${formatearFecha(recurso.Fecha_Ultima_Ejecucion)}</span>` : ''}
                                     </div>
-                                </div>
+                                    <div class="arbol-meta" style="margin-top: 4px; font-size: 11px;">
+                                        <span><i class="fas fa-sync-alt"></i> ${entregable.Frecuencia_Validacion || '-'}</span>
+                                        ${entregable.Responsables ? `<span title="${entregable.Responsables}"><i class="fas fa-user"></i> ${entregable.Responsables.split(',')[0]}...</span>` : ''}
+                                    </div>
                             `;
+
+                            if (recursos.length > 0) {
+                                html += '<div class="arbol-recursos">';
+                                recursos.forEach(recurso => {
+                                    const estadoClass = (recurso.Ultimo_Estado || 'desconocido').toLowerCase();
+                                    const estadoIcon = estadoClass === 'ok' ? 'check-circle' : estadoClass === 'error' ? 'times-circle' : 'exclamation-circle';
+
+                                    html += `
+                                        <div class="arbol-recurso">
+                                            <div class="recurso-header">
+                                                <span class="recurso-icon">${recurso.Nombre_Herramienta ? getHerramientaIcon(recurso.Nombre_Herramienta) : '🔗'}</span>
+                                                <strong>${recurso.Nombre_Recurso}</strong>
+                                                <span class="badge badge-${estadoClass}">
+                                                    <i class="fas fa-${estadoIcon}"></i> ${recurso.Ultimo_Estado || 'Desconocido'}
+                                                </span>
+                                            </div>
+                                            ${recurso.URL_Configuracion ? `
+                                                <div class="recurso-url">
+                                                    <i class="fas fa-link"></i>
+                                                    <code>${truncarURL(recurso.URL_Configuracion, 60)}</code>
+                                                    <button class="btn-icon" onclick="copiarURL('${recurso.URL_Configuracion}')" title="Copiar URL">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                    <a href="${recurso.URL_Configuracion}" target="_blank" class="btn-icon" title="Abrir">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </div>
+                                            ` : ''}
+                                            <div class="recurso-meta">
+                                                <span><i class="fas fa-clock"></i> ${recurso.Frecuencia_Ejecucion || '-'}</span>
+                                                ${recurso.Fecha_Ultima_Ejecucion ? `<span><i class="fas fa-calendar"></i> ${formatearFecha(recurso.Fecha_Ultima_Ejecucion)}</span>` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                html += '</div>';
+                            }
+                            html += '</div>'; // Cerrar arbol-entregable
                         });
-                        html += '</div>';
-                    }
-
-                    html += '</div>';
-                });
-                html += '</div>';
+                        html += '</div>'; // Cerrar subgrupo
+                    });
+                }
+                html += '</div>'; // Cerrar contenedor
             }
-
             html += '</div>'; // Close marca-card
         });
     }
@@ -1722,6 +1761,7 @@ function mostrarFormularioEntregable(idMarca) {
     // Cargar opciones dinámicas
     cargarClientesEnFormulario();
     cargarTiposEntregable();
+    cargarUsuariosEnFormulario();
 
     // Inicializar tabla de herramientas con una fila vacía
     limpiarHerramientas();
@@ -1782,6 +1822,53 @@ async function cargarClientesEnFormulario() {
     }
 }
 
+// Cargar usuarios en el formulario de entregables (checkboxes)
+function cargarUsuariosEnFormulario() {
+    const container = document.getElementById('responsables-checkboxes-container');
+    if (!container) return;
+
+    try {
+        const usuarios = appState.users || [];
+        const usuariosActivos = usuarios.filter(u => u.Estado === 'Activo');
+
+        if (usuariosActivos.length === 0) {
+            container.innerHTML = '<div class="empty-state-small">No hay usuarios activos registrados</div>';
+            return;
+        }
+
+        let html = '';
+        usuariosActivos.forEach(usuario => {
+            html += `
+                <div class="checkbox-item-wrapper">
+                    <label class="checkbox-label-inline">
+                        <input type="checkbox" class="checkbox-responsable" value="${usuario.Nombre_Usuario}" onchange="actualizarResponsablesHidden()">
+                        <span>${usuario.Nombre_Usuario}</span>
+                    </label>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        actualizarResponsablesHidden(); // Resetear campo hidden
+    } catch (error) {
+        console.error('Error al cargar usuarios en formulario:', error);
+        container.innerHTML = '<div class="text-error">Error al cargar usuarios</div>';
+    }
+}
+
+// Actualizar el campo hidden de responsables con los seleccionados
+function actualizarResponsablesHidden() {
+    const checkboxes = document.querySelectorAll('.checkbox-responsable:checked');
+    const responsables = Array.from(checkboxes).map(cb => cb.value).join(', ');
+    const hiddenInput = document.getElementById('hidden-responsables');
+    if (hiddenInput) {
+        hiddenInput.value = responsables;
+        // Marcar formulario como sucio para validación
+        const form = hiddenInput.closest('form');
+        if (form) form.dataset.dirty = 'true';
+    }
+}
+
 // Cargar marcas de un cliente específico
 async function cargarMarcasDeCliente(idCliente) {
     const select = document.getElementById('select-marca-entregable');
@@ -1819,7 +1906,7 @@ async function cargarMarcasDeCliente(idCliente) {
 
 let contadorHerramientas = 0;
 
-function agregarFilaHerramienta(herramienta = '', url = '') {
+function agregarFilaHerramienta(herramienta = '', url = '', comentario = '') {
     const tbody = document.getElementById('herramientas-list');
     if (!tbody) return;
 
@@ -1841,8 +1928,13 @@ function agregarFilaHerramienta(herramienta = '', url = '') {
         </td>
         <td>
             <input type="text" class="herramienta-url" data-id="${id}"
-                   placeholder="URL o descripción (ej: Dashboard en carpeta X)"
-                   value="${url}" required>
+                   placeholder="https://..."
+                   value="${url}">
+        </td>
+        <td>
+            <input type="text" class="herramienta-comentario" data-id="${id}"
+                   placeholder="Descripción o comentario"
+                   value="${comentario}">
         </td>
         <td style="text-align: center;">
             <button type="button" class="btn-icon btn-danger" onclick="eliminarFilaHerramienta(${id})" title="Eliminar">
@@ -1879,15 +1971,17 @@ function actualizarHerramientasHidden() {
         const rows = tbody.querySelectorAll('tr');
         rows.forEach(row => {
             const select = row.querySelector('.herramienta-select');
-            const input = row.querySelector('.herramienta-url');
+            const inputUrl = row.querySelector('.herramienta-url');
+            const inputComentario = row.querySelector('.herramienta-comentario');
 
-            if (select && input) {
+            if (select) {
                 const herramienta = select.value;
-                const url = input.value || ''; // Permitir vacío si es necesario, o validar
+                const url = inputUrl ? inputUrl.value : '';
+                const comentario = inputComentario ? inputComentario.value : '';
 
                 // Solo guardar si al menos se seleccionó una herramienta
                 if (herramienta) {
-                    herramientas.push({ herramienta, url });
+                    herramientas.push({ herramienta, url, comentario });
                 }
             }
         });
@@ -1921,7 +2015,8 @@ function cargarHerramientasDesdeJSON(jsonString) {
         const herramientas = JSON.parse(jsonString);
         if (Array.isArray(herramientas) && herramientas.length > 0) {
             herramientas.forEach(h => {
-                agregarFilaHerramienta(h.herramienta, h.url);
+                // Soporte retroactivo para cuando 'url' contenía el comentario
+                agregarFilaHerramienta(h.herramienta, h.url, h.comentario || '');
             });
         } else {
             agregarFilaHerramienta();
@@ -1992,6 +2087,9 @@ function actualizarCampoDiaValidacion(frecuencia) {
             break;
 
         case 'Mensual':
+        case 'Trimestral':
+        case 'Semestral':
+        case 'Anual':
             html = '<select name="dia_validacion" id="select-dia-validacion" required>';
             html += '<option value="">Selecciona día del mes...</option>';
             for (let i = 1; i <= 31; i++) {
@@ -2055,6 +2153,7 @@ function editarEntregable(idEntregable) {
     // Cargar opciones dinámicas primero
     cargarClientesEnFormulario();
     cargarTiposEntregable();
+    cargarUsuariosEnFormulario();
 
     // Llenar formulario con datos del entregable
     form.querySelector('[name="id_entregable"]').value = entregable.ID_Entregable;
@@ -2062,28 +2161,36 @@ function editarEntregable(idEntregable) {
     form.querySelector('[name="id_marca"]').value = entregable.ID_Marca;
     form.querySelector('[name="nombre_entregable"]').value = entregable.Nombre_Entregable || '';
     form.querySelector('[name="tipo_entregable"]').value = entregable.Tipo_Entregable || '';
-    form.querySelector('[name="url_entregable"]').value = entregable.url_entregable || ''; // Cargar valor
+    form.querySelector('[name="url_entregable"]').value = entregable.url_entregable || '';
+    form.querySelector('[name="nivel_automatizacion"]').value = entregable.Nivel_Automatizacion || 'Manual';
+    form.querySelector('[name="validacion_estado"]').value = entregable.Validacion_Estado || 'OK';
+
+    // Configurar responsables (Checkboxes)
+    const responsablesList = (entregable.Responsables || '').split(',').map(r => r.trim());
+    const hiddenResponsables = document.getElementById('hidden-responsables');
+    if (hiddenResponsables) hiddenResponsables.value = entregable.Responsables || '';
+
+    const checkboxesResp = document.querySelectorAll('.checkbox-responsable');
+    checkboxesResp.forEach(cb => {
+        cb.checked = responsablesList.includes(cb.value);
+    });
+
     form.querySelector('[name="instrucciones_tecnicas"]').value = entregable.Instrucciones_Tecnicas || '';
     form.querySelector('[name="notas_troubleshooting"]').value = entregable.Notas_Troubleshooting || '';
     form.querySelector('[name="estado"]').value = entregable.Estado || 'Activo';
 
-    // Cargar herramientas desde JSON
-    cargarHerramientasDesdeJSON(entregable.URLs_Fuentes || '');
-
-    // Cargar campo automatizado
-    const checkboxAutomatizado = document.getElementById('checkbox-automatizado');
+    // Cargar campo automatizado (Nivel_Automatizacion)
+    const selectNivelAuto = document.getElementById('select-nivel-automatizacion');
     const campoAutomatizacion = document.getElementById('campo-proceso-automatizacion');
     const textareaAutomatizacion = document.getElementById('textarea-proceso-automatizacion');
 
-    if (entregable.Automatizado === 'Sí' || entregable.Automatizado === true) {
-        if (checkboxAutomatizado) checkboxAutomatizado.checked = true;
+    if (entregable.Nivel_Automatizacion === 'Semiautomatizado' || entregable.Nivel_Automatizacion === 'Automatizado') {
         if (campoAutomatizacion) campoAutomatizacion.style.display = 'block';
         if (textareaAutomatizacion) {
             textareaAutomatizacion.value = entregable.Proceso_Automatizacion || '';
             textareaAutomatizacion.required = true;
         }
     } else {
-        if (checkboxAutomatizado) checkboxAutomatizado.checked = false;
         if (campoAutomatizacion) campoAutomatizacion.style.display = 'none';
         if (textareaAutomatizacion) {
             textareaAutomatizacion.value = '';
@@ -2144,8 +2251,81 @@ function editarEntregable(idEntregable) {
     // Cambiar título del modal
     modal.querySelector('.modal-header h2').innerHTML = `<i class="fas fa-edit"></i> Editar Entregable: ${entregable.Nombre_Entregable}`;
 
+    // Cargar herramientas y URLs
+    cargarHerramientasDesdeJSON(entregable.URLs_Fuentes || '');
+
     // Mostrar modal
     modal.classList.add('active');
+}
+
+/**
+ * Abre el formulario pre-llenado con los datos de un entregable existente para duplicarlo
+ */
+function duplicarEntregable(idEntregable) {
+    const original = appState.entregables.find(e => e.ID_Entregable == idEntregable);
+    if (!original) {
+        mostrarNotificacion('Entregable original no encontrado', 'error');
+        return;
+    }
+
+    // Usar la lógica de mostrarFormularioEntregable para inicializar el modal con la marca correcta
+    mostrarFormularioEntregable(original.ID_Marca);
+
+    // Ajustar detalles específicos del duplicado
+    const form = document.getElementById('form-entregable');
+    const modal = document.getElementById('modal-form-entregable');
+
+    // Cambiar título
+    modal.querySelector('.modal-header h2').innerHTML = `<i class="fas fa-copy"></i> Duplicar Entregable: ${original.Nombre_Entregable}`;
+
+    // Llenar datos (sin ID para que sea una creación nueva)
+    form.querySelector('[name="id_entregable"]').value = '';
+    form.querySelector('[name="nombre_entregable"]').value = `(COPIA) ${original.Nombre_Entregable}`.toUpperCase();
+    form.querySelector('[name="tipo_entregable"]').value = original.Tipo_Entregable || '';
+    form.querySelector('[name="url_entregable"]').value = original.url_entregable || '';
+    form.querySelector('[name="nivel_automatizacion"]').value = original.Nivel_Automatizacion || 'Manual';
+    form.querySelector('[name="validacion_estado"]').value = original.Validacion_Estado || 'OK';
+    form.querySelector('[name="instrucciones_tecnicas"]').value = original.Instrucciones_Tecnicas || '';
+    form.querySelector('[name="notas_troubleshooting"]').value = original.Notas_Troubleshooting || '';
+    form.querySelector('[name="estado"]').value = original.Estado || 'Activo';
+
+    // Cargar herramientas
+    cargarHerramientasDesdeJSON(original.URLs_Fuentes || '');
+
+    // Configurar responsables
+    const responsablesList = (original.Responsables || '').split(',').map(r => r.trim());
+    const checkboxesResp = document.querySelectorAll('.checkbox-responsable');
+    checkboxesResp.forEach(cb => {
+        cb.checked = responsablesList.includes(cb.value);
+    });
+    actualizarResponsablesHidden();
+
+    // Configurar frecuencia y automatización
+    setTimeout(() => {
+        const selectFrecuencia = document.getElementById('select-frecuencia-validacion');
+        if (selectFrecuencia) {
+            selectFrecuencia.value = original.Frecuencia_Validacion || '';
+            actualizarCampoDiaValidacion(original.Frecuencia_Validacion);
+
+            setTimeout(() => {
+                if (original.Frecuencia_Validacion === 'Semanal') {
+                    const dias = original.Dia_Validacion ? original.Dia_Validacion.split(',').map(d => d.trim()) : [];
+                    document.querySelectorAll('.checkbox-dia').forEach(cb => {
+                        cb.checked = dias.includes(cb.value);
+                    });
+                    const hiddenDia = document.getElementById('hidden-dia-validacion');
+                    if (hiddenDia) hiddenDia.value = original.Dia_Validacion;
+                } else {
+                    const selectDia = document.getElementById('select-dia-validacion');
+                    if (selectDia) selectDia.value = original.Dia_Validacion || '';
+                }
+            }, 150);
+        }
+
+        toggleAutomatizadoField();
+        const textareaAuto = document.getElementById('textarea-proceso-automatizacion');
+        if (textareaAuto) textareaAuto.value = original.Proceso_Automatizacion || '';
+    }, 200);
 }
 
 // ========================================
@@ -2177,7 +2357,8 @@ function verDetalleEntregable(idEntregable) {
                         <thead>
                             <tr>
                                 <th>Herramienta</th>
-                                <th>URL / Detalle</th>
+                                <th>URL</th>
+                                <th>Comentario</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2191,8 +2372,11 @@ function verDetalleEntregable(idEntregable) {
                                     </td>
                                     <td>
                                         ${h.url && h.url.startsWith('http')
-                        ? `<a href="${h.url}" target="_blank" class="text-link"><i class="fas fa-link"></i> ${truncarURL(h.url, 40)}</a>`
+                        ? `<a href="${h.url}" target="_blank" class="text-link"><i class="fas fa-link"></i> Link</a>`
                         : (h.url || '-')}
+                                    </td>
+                                    <td>
+                                        ${h.comentario || '-'}
                                     </td>
                                 </tr>
                             `).join('')}
@@ -2227,20 +2411,23 @@ function verDetalleEntregable(idEntregable) {
             </div>
         ` : ''}
 
-        <div class="detalle-grid">
             <div class="detalle-card">
                 <h4><i class="fas fa-calendar-check"></i> Validación</h4>
+                <p><strong>Estado:</strong> <span class="badge badge-${getValidacionBadgeClass(entregable.Validacion_Estado)}">${entregable.Validacion_Estado || 'OK'}</span></p>
                 <p><strong>Frecuencia:</strong> ${entregable.Frecuencia_Validacion || '-'}</p>
                 <p><strong>Día(s):</strong> ${entregable.Dia_Validacion || '-'}</p>
             </div>
             
-            ${entregable.Automatizado === 'Sí' ? `
-                <div class="detalle-card">
-                    <h4><i class="fas fa-robot"></i> Automatización</h4>
-                    <span class="badge badge-success">Automatizado</span>
-                    ${entregable.Proceso_Automatizacion ? `<p style="margin-top: 10px; white-space: pre-wrap;">${entregable.Proceso_Automatizacion}</p>` : ''}
-                </div>
-            ` : ''}
+            <div class="detalle-card">
+                <h4><i class="fas fa-robot"></i> Automatización</h4>
+                <p><strong>Nivel:</strong> <span class="badge" style="background: ${entregable.Nivel_Automatizacion === 'Automatizado' ? '#34A853' : (entregable.Nivel_Automatizacion === 'Semiautomatizado' ? '#FBBC04' : '#5F6368')}; color: white;">${entregable.Nivel_Automatizacion || 'Manual'}</span></p>
+                ${entregable.Proceso_Automatizacion ? `<p style="margin-top: 10px; white-space: pre-wrap;">${entregable.Proceso_Automatizacion}</p>` : ''}
+            </div>
+
+            <div class="detalle-card">
+                <h4><i class="fas fa-users"></i> Responsable(s)</h4>
+                <p>${entregable.Responsables || 'No asignado'}</p>
+            </div>
         </div>
 
         <div class="detalle-section">
@@ -2326,16 +2513,22 @@ async function guardarEntregable(event) {
         actualizarHerramientasHidden();
         const urlsFuentesJson = document.getElementById('hidden-herramientas').value;
 
+        // Forzar mayúsculas en campos de texto antes de crear el objeto
+        const nombreEntregableUpper = nombreEntregable.toUpperCase();
+        const responsablesUpper = (formData.get('responsables') || '').trim().toUpperCase();
+
         const entregableData = {
             ID_Cliente: idCliente,
             ID_Marca: idMarca,
-            Nombre_Entregable: nombreEntregable,
+            Nombre_Entregable: nombreEntregableUpper,
             Tipo_Entregable: formData.get('tipo_entregable') || '',
-            url_entregable: formData.get('url_entregable') || '', // Columna exacta en Sheets
+            url_entregable: formData.get('url_entregable') || '',
             Frecuencia_Validacion: formData.get('frecuencia_validacion') || '',
             Dia_Validacion: formData.get('dia_validacion') || '',
             URLs_Fuentes: urlsFuentesJson || '',
-            Automatizado: formData.get('automatizado') ? 'Sí' : 'No',
+            Nivel_Automatizacion: formData.get('nivel_automatizacion') || 'Manual',
+            Validacion_Estado: formData.get('validacion_estado') || 'OK',
+            Responsables: responsablesUpper,
             Proceso_Automatizacion: formData.get('proceso_automatizacion') || '',
             Instrucciones_Tecnicas: formData.get('instrucciones_tecnicas') || '',
             Notas_Troubleshooting: formData.get('notas_troubleshooting') || '',
@@ -2514,6 +2707,17 @@ async function eliminarEntregable(idEntregable) {
     }
 }
 
+// Helper para obtener la clase CSS del badge de validación
+function getValidacionBadgeClass(estado) {
+    if (!estado) return 'ok';
+    const s = estado.toLowerCase();
+    if (s.includes('ok')) return 'ok';
+    if (s.includes('error')) return 'error';
+    if (s.includes('desarrollo')) return 'desarrollo';
+    if (s.includes('revisión') || s.includes('revision')) return 'revision';
+    return 'ok';
+}
+
 // ========================================
 // ESTILOS ADICIONALES
 // ========================================
@@ -2527,7 +2731,8 @@ const additionalStyles = `
 .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
 .badge-activo, .badge-ok { background: #34A853; color: white; }
 .badge-inactivo, .badge-error { background: #EA4335; color: white; }
-.badge-pausado { background: #FF9800; color: white; }
+.badge-pausado, .badge-revision { background: #FBBC04; color: black; }
+.badge-desarrollo { background: #4285F4; color: white; }
 .badge-warning { background: #FFF2CC; color: #B85C00; }
 .badge-critica { background: #CC0000; color: white; }
 .badge-alta { background: #EA4335; color: white; }
@@ -2774,7 +2979,7 @@ async function guardarUser(event) {
     const userId = formData.get('id_user');
 
     const userData = {
-        Nombre_Usuario: formData.get('nombre'),
+        Nombre_Usuario: (formData.get('nombre') || '').trim().toUpperCase(),
         Email: formData.get('email'),
         Rol: formData.get('tipo_usuario'),
         Estado: formData.get('estado')
@@ -2953,10 +3158,148 @@ function mostrarModal(titulo, content) {
     if (form) delete form.dataset.dirty;
 }
 
+
 /**
- * Cierra el modal genérico con confirmación
- * @param {boolean} force - Si es true, cierra sin pedir confirmación
+ * Renderiza la lista de entregables agrupada jerárquicamente
+ * 1. Activos vs Inactivos
+ * 2. Validación (OK, Con Error, etc)
+ * 3. Ordenados por Frecuencia
  */
-function cerrarModal(force = false) {
-    intentarCerrarModal('modal-generico', force);
+function renderizarListaEntregablesAgrupados(entregables) {
+    if (!entregables || entregables.length === 0) return '';
+
+    // 1. Separar por Estado (Activo vs Otros)
+    const gruposEstado = {
+        'Activos': entregables.filter(e => (e.Estado || 'Activo') === 'Activo'),
+        'Inactivos': entregables.filter(e => (e.Estado || 'Activo') !== 'Activo')
+    };
+
+    let html = '';
+
+    const ordenFrecuencia = {
+        'Anual': 1,
+        'Semestral': 2,
+        'Trimestral': 3,
+        'Mensual': 4,
+        'Quincenal': 5,
+        'Semanal': 6,
+        'Diario': 7,
+        'Manual': 8,
+        '-': 9
+    };
+
+    for (const [nombreGrupo, itemsGrupo] of Object.entries(gruposEstado)) {
+        if (itemsGrupo.length === 0) continue;
+
+        const claseGrupo = nombreGrupo === 'Activos' ? 'activo' : 'inactivo';
+        const iconoGrupo = nombreGrupo === 'Activos' ? 'fa-check-circle' : 'fa-times-circle';
+
+        html += `
+            <div class="entregables-grupo ${claseGrupo}">
+                <div class="entregables-grupo-label">
+                    <i class="fas ${iconoGrupo}"></i> ${nombreGrupo} (${itemsGrupo.length})
+                </div>
+            </div>
+        `;
+
+        // 2. Sub-agrupar por Validación dentro del grupo de estado
+        const subgruposValidacion = {};
+        itemsGrupo.forEach(e => {
+            const val = e.Validacion_Estado || 'OK';
+            if (!subgruposValidacion[val]) subgruposValidacion[val] = [];
+            subgruposValidacion[val].push(e);
+        });
+
+        // Ordenar subgrupos de validación (Errores primero si es grupo Activo)
+        const keysValidacion = Object.keys(subgruposValidacion).sort((a, b) => {
+            if (a === 'Con Error') return -1;
+            if (b === 'Con Error') return 1;
+            return a.localeCompare(b);
+        });
+
+        keysValidacion.forEach(valKey => {
+            const itemsVal = subgruposValidacion[valKey];
+
+            // Determinar clase de color
+            let valClass = 'val-secondary';
+            const valLower = valKey.toLowerCase();
+            if (valLower.includes('ok')) valClass = 'val-ok';
+            else if (valLower.includes('error')) valClass = 'val-error';
+            else if (valLower.includes('revisión') || valLower.includes('desarrollo') || valLower.includes('pendiente')) valClass = 'val-warning';
+
+            html += `
+                <div class="entregables-subgrupo ${valClass}">
+                    <div class="entregables-subgrupo-label">
+                        <i class="fas fa-shield-alt"></i> Validación: ${valKey} (${itemsVal.length})
+                    </div>
+            `;
+
+            // 3. Ordenar por Frecuencia y Renderizar items
+            const itemsOrdenados = itemsVal.sort((a, b) => {
+                const frecA = ordenFrecuencia[a.Frecuencia_Validacion] || 99;
+                const frecB = ordenFrecuencia[b.Frecuencia_Validacion] || 99;
+                return frecA - frecB;
+            });
+
+            itemsOrdenados.forEach(entregable => {
+                html += `
+                    <div class="entregable-item">
+                        <div class="entregable-info">
+                            <i class="fas fa-file-alt"></i>
+                            <strong>${entregable.Nombre_Entregable}</strong>
+                            <span class="badge badge-secondary">${entregable.Tipo_Entregable || 'Sin tipo'}</span>
+                            
+                            <span style="display: inline-flex; gap: 4px; align-items: center; margin: 0 8px; padding-left: 8px; border-left: 1px solid #ddd;">
+                                <span class="entregable-frecuencia">${entregable.Frecuencia_Validacion || '-'}</span>
+                            </span>
+
+                            <span class="badge" style="background: #e8f0fe; color: #1967d2; font-size: 11px;">
+                                <i class="fas fa-robot" style="font-size: 10px; margin-right: 4px;"></i> ${entregable.Nivel_Automatizacion || 'Manual'}
+                            </span>
+                            ${entregable.Responsables ? `
+                                <span class="badge" style="background: #3c4043; color: white; font-size: 11px;" title="${entregable.Responsables}">
+                                    <i class="fas fa-user" style="font-size: 10px; margin-right: 4px;"></i> ${entregable.Responsables.split(',')[0]}${entregable.Responsables.includes(',') ? '...' : ''}
+                                </span>
+                            ` : ''}
+                            ${entregable.url_entregable ? `
+                                <a href="${entregable.url_entregable}" target="_blank" class="link-entregable" title="Ver Entregable">
+                                    <i class="fas fa-external-link-alt"></i> Link
+                                </a>
+                            ` : ''}
+                        </div>
+                        <div class="entregable-acciones">
+                            <button class="btn-icon-small" onclick="verDetalleEntregable('${entregable.ID_Entregable}')" title="Ver detalle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon-small" onclick="duplicarEntregable('${entregable.ID_Entregable}')" title="Duplicar">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="btn-icon-small" onclick="editarEntregable('${entregable.ID_Entregable}')" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon-small btn-danger" onclick="eliminarEntregable('${entregable.ID_Entregable}')" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`; // Cerrar subgrupo
+        });
+    }
+
+    return html;
+}
+
+/**
+ * Obtiene la clase CSS para el badge de validación
+ */
+function getValidacionBadgeClass(estado) {
+    if (!estado) return 'success';
+    estado = estado.toLowerCase();
+    if (estado.includes('error')) return 'danger';
+    if (estado.includes('ok')) return 'success';
+    if (estado.includes('revisi') || estado.includes('desarrollo') || estado.includes('pendiente')) return 'warning';
+    return 'secondary';
 }
