@@ -38,7 +38,7 @@ Necesitas agregar **3 secrets** en GitHub:
 #### Secret 3: SCRIPT_URL
 
 - **Name**: `SCRIPT_URL`
-- **Secret**: `https://script.google.com/macros/s/AKfycbzqLKxHNTG6Ib6ojuaDfRWpch5SS8biNuHTAOcxY0IoCgpeI5BrcyEyMhPp99j8NXI/exec`
+- **Secret**: `https://script.google.com/macros/s/AKfycbyOzVFHt0XUjut7tTDREuTEvpvNmpKpHQxC3liutNAn9tbbhdPOD0eZ-OaWUHz0fsIm/exec`
 - Click en **Add secret**
 
 ### Paso 3: Verifica la configuración
@@ -88,7 +88,7 @@ Si quieres trabajar localmente sin esperar al deployment:
 const CONFIG = {
     SHEET_ID: '1uTMjJ_4_uXfZ2u0P9CTMy4pzMBY60e0tzWkM6xnglTk',
     API_KEY: 'AIzaSyC8llGU58K1JmLPsH1XAS-El3Px2sTf6-E',
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzqLKxHNTG6Ib6ojuaDfRWpch5SS8biNuHTAOcxY0IoCgpeI5BrcyEyMhPp99j8NXI/exec',
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyOzVFHt0XUjut7tTDREuTEvpvNmpKpHQxC3liutNAn9tbbhdPOD0eZ-OaWUHz0fsIm/exec',
     SHEETS: {
         CLIENTES: 'Clientes',
         MARCAS: 'Marcas',
