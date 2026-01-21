@@ -1533,15 +1533,41 @@ async function enviarAlScriptCORS(action, data) {
 function mostrarFormularioMarca(idCliente) {
     const modal = document.getElementById('modal-form-marca');
     const form = document.getElementById('form-marca');
+
+    // Poblar el selector de clientes
+    cargarClientesEnMarcaForm();
+
     modal.classList.add('active');
     form.reset();
     delete form.dataset.dirty;
-    form.querySelector('[name="id_cliente"]').value = idCliente;
+
+    // Establecer el cliente seleccionado por defecto
+    if (idCliente) {
+        form.querySelector('[name="id_cliente"]').value = idCliente;
+    }
+
     form.querySelector('[name="id_marca"]').value = '';
 
     document.querySelector('#modal-form-marca .modal-header h2').innerHTML = '<i class="fas fa-plus"></i> Nueva Marca';
     // Protección de concurrencia
     appState.isUserOperating = true;
+}
+
+/**
+ * Puebla el selector de clientes en el formulario de marcas
+ */
+function cargarClientesEnMarcaForm() {
+    const select = document.getElementById('select-marca-cliente');
+    if (!select) return;
+
+    const clientes = (appState.clientes || []).filter(c => c.Estado === 'Activo');
+
+    let html = '<option value="">Selecciona un cliente...</option>';
+    clientes.forEach(c => {
+        html += `<option value="${c.ID_Cliente}">${c.Nombre_Cliente}</option>`;
+    });
+
+    select.innerHTML = html;
 }
 
 // Cerrar formulario de marca
@@ -1648,11 +1674,13 @@ async function guardarMarca(event) {
             cerrarFormularioMarca(true);
 
             // Refrescar vista actual
+            // Si la marca cambió de cliente, es mejor refrescar la tabla de clientes completa
+            // para asegurar que los contadores y las listas se actualicen correctamente
             if (appState.currentView === 'clientes') {
-                if (appState.currentCliente && appState.currentCliente.ID_Cliente == idCliente) {
-                    verDetalleCliente(idCliente);
-                } else {
-                    renderizarTablaClientes();
+                renderizarTablaClientes();
+                // Si estábamos viendo el detalle de un cliente, refrescar ese también
+                if (appState.currentCliente) {
+                    verDetalleCliente(appState.currentCliente.ID_Cliente);
                 }
             } else {
                 refrescarVistaActual(true);
@@ -1682,9 +1710,13 @@ function editarMarca(idMarca) {
         return;
     }
 
+    // Poblar el selector de clientes
+    cargarClientesEnMarcaForm();
+
     const form = document.getElementById('form-marca');
     form.reset();
     delete form.dataset.dirty;
+
     form.querySelector('[name="id_marca"]').value = marca.ID_Marca;
     form.querySelector('[name="id_cliente"]').value = marca.ID_Cliente;
     form.querySelector('[name="nombre_marca"]').value = marca.Nombre_Marca || '';
@@ -3430,6 +3462,32 @@ function inicializarSortableClientes() {
 }
 
 /**
+ * Actualiza el orden de las marcas de un contenedor específico y sincroniza con el backend
+ * @param {HTMLElement} container 
+ */
+async function actualizarOrdenMarcasEnContenedor(container) {
+    const items = Array.from(container.querySelectorAll('.marca-item-container'));
+    if (items.length === 0) return;
+
+    const newOrder = items.map((item, index) => {
+        const marcaInfo = item.querySelector('.marca-item');
+        return {
+            id: marcaInfo.getAttribute('data-marca-id'),
+            order: index + 1
+        };
+    });
+
+    // Actualizar appState local
+    newOrder.forEach(item => {
+        const marca = appState.marcas.find(m => m.ID_Marca == item.id);
+        if (marca) marca.Orden = item.order;
+    });
+
+    // Sincronizar con backend (sin mostrar doble bloqueo si es posible, pero guardarNuevoOrden ya lo maneja)
+    return await guardarNuevoOrden('Marcas', newOrder);
+}
+
+/**
  * Inicializa SortableJS para las marcas de un cliente
  * @param {string} idCliente 
  */
@@ -3438,28 +3496,67 @@ function inicializarSortableMarcas(idCliente) {
     if (!el) return;
 
     Sortable.create(el, {
+        group: 'marcas_compartidas', // Crucial para permitir mover entre clientes
         handle: '.drag-handle',
         animation: 150,
         ghostClass: 'sortable-ghost',
         onEnd: async function (evt) {
-            if (evt.oldIndex === evt.newIndex) return;
+            const fromContainer = evt.from;
+            const toContainer = evt.to;
 
-            const items = Array.from(el.querySelectorAll('.marca-item-container'));
-            const newOrder = items.map((item, index) => {
-                const marcaInfo = item.querySelector('.marca-item');
-                return {
-                    id: marcaInfo.getAttribute('data-marca-id'),
-                    order: index + 1
-                };
-            });
+            // Caso A: Se movió a OTRO cliente
+            if (fromContainer !== toContainer) {
+                const marcaItem = evt.item.querySelector('.marca-item');
+                const idMarca = marcaItem.getAttribute('data-marca-id');
 
-            // Actualizar appState
-            newOrder.forEach(item => {
-                const marca = appState.marcas.find(m => m.ID_Marca == item.id);
-                if (marca) marca.Orden = item.order;
-            });
+                // Obtener el ID del nuevo cliente desde el ID del contenedor abuelo
+                // El contenedor 'el' está dentro de #marcas-${idCliente}
+                const idClienteDestino = toContainer.closest('.marcas-expandible').id.replace('marcas-', '');
 
-            await guardarNuevoOrden('Marcas', newOrder);
+                console.log(`🔄 Traspaso de Marca: ${idMarca} de Cliente Antiguo -> Nuevo Cliente: ${idClienteDestino}`);
+
+                mostrarBloqueoOperacion('Cambiando cliente de la marca...');
+
+                try {
+                    // 1. Actualizar el ID_Cliente en la base de datos
+                    await enviarAlScript({
+                        action: 'update',
+                        sheetName: CONFIG.SHEETS.MARCAS,
+                        rowId: idMarca,
+                        data: { ID_Cliente: idClienteDestino }
+                    });
+
+                    // 2. Actualizar appState local
+                    const marca = appState.marcas.find(m => m.ID_Marca == idMarca);
+                    if (marca) marca.ID_Cliente = idClienteDestino;
+
+                    // 3. Sincronizar orden en AMBOS contenedores
+                    // Primero el origen (para que los que se quedaron se reumeren)
+                    await actualizarOrdenMarcasEnContenedor(fromContainer);
+                    // Luego el destino (para que la nueva marca tome su posición)
+                    await actualizarOrdenMarcasEnContenedor(toContainer);
+
+                    mostrarNotificacion('Marca traspasada con éxito', 'success');
+
+                    // Opcional: Si queremos ser 100% seguros de que los contadores en la tabla principal
+                    // se actualicen (el número de marcas del cliente), refrescamos la tabla.
+                    renderizarTablaClientes();
+
+                } catch (error) {
+                    console.error('❌ Error al traspasar marca:', error);
+                    mostrarNotificacion('Error al mover la marca entre clientes', 'error');
+                    // Revertir vista en caso crítico
+                    refrescarVistaActual(true);
+                } finally {
+                    ocultarBloqueoOperacion();
+                }
+            }
+            // Caso B: Movimiento dentro del MISMO cliente
+            else {
+                if (evt.oldIndex !== evt.newIndex) {
+                    await actualizarOrdenMarcasEnContenedor(fromContainer);
+                }
+            }
         }
     });
 }

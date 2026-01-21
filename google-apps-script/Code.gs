@@ -202,7 +202,7 @@ function updateRow(sheetName, rowId, data, user) {
           sheet.getRange(i + 1, colIndex + 1).setValue(now);
         } else if (header === 'Actualizado_Por') {
           sheet.getRange(i + 1, colIndex + 1).setValue(user);
-        } else if (data[header] !== undefined && !header.startsWith('ID_') && header !== 'Fecha_Creacion') {
+        } else if (data[header] !== undefined && header !== headers[0] && header !== 'Fecha_Creacion') {
           sheet.getRange(i + 1, colIndex + 1).setValue(data[header]);
         }
       });

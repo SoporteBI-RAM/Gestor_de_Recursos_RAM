@@ -520,7 +520,14 @@
             <div class="modal-body">
                 <form id="form-marca" onsubmit="guardarMarca(event)">
                     <input type="hidden" name="id_marca" value="">
-                    <input type="hidden" name="id_cliente" value="">
+
+                    <div class="form-group">
+                        <label>Cliente Dueño *</label>
+                        <select name="id_cliente" id="select-marca-cliente" required>
+                            <option value="">Selecciona un cliente...</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>Nombre de la Marca *</label>
                         <input type="text" name="nombre_marca" id="input-nombre-marca" required

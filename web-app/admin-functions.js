@@ -601,7 +601,7 @@ function renderizarTablaCategoriasHerramientas() {
     }
 
     const html = `
-        < table class="data-table" >
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -636,8 +636,8 @@ function renderizarTablaCategoriasHerramientas() {
                     </tr>
                 `).join('')}
             </tbody>
-        </table >
-        `;
+        </table>
+    `;
 
     container.innerHTML = html;
 }
@@ -648,33 +648,33 @@ function renderizarTablaCategoriasHerramientas() {
 
 function mostrarFormularioTipoEntregable() {
     mostrarModal('Nuevo Tipo de Entregable', `
-        < form id = "form-tipo-entregable" onsubmit = "guardarTipoEntregable(event)" >
+        <form id="form-tipo-entregable" onsubmit="guardarTipoEntregable(event)">
             <input type="hidden" name="id_tipo" value="">
 
-                <div class="form-group">
-                    <label>Nombre del Tipo *</label>
-                    <input type="text" name="nombre_tipo" required placeholder="Ej: POWER BI" style="text-transform: uppercase;">
-                </div>
+            <div class="form-group">
+                <label>Nombre del Tipo *</label>
+                <input type="text" name="nombre_tipo" required placeholder="Ej: POWER BI" style="text-transform: uppercase;">
+            </div>
 
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea name="descripcion" rows="3" placeholder="Breve descripción del tipo de entregable"></textarea>
-                </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" rows="3" placeholder="Breve descripción del tipo de entregable"></textarea>
+            </div>
 
-                <div class="form-group">
-                    <label>Estado *</label>
-                    <select name="estado" required>
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                        <option value="Pausado">Pausado</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Estado *</label>
+                <select name="estado" required>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                    <option value="Pausado">Pausado</option>
+                </select>
+            </div>
 
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="intentarCerrarModal('modal-generico')">Cancelar</button>
-                    <button type="submit" class="btn-primary">Guardar</button>
-                </div>
-            </form>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="intentarCerrarModal('modal-generico')">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar</button>
+            </div>
+        </form>
     `);
 }
 
@@ -752,7 +752,7 @@ async function editarTipoEntregable(id) {
     if (!tipo) return;
 
     mostrarModal('Editar Tipo de Entregable', `
-        < form id = "form-tipo-entregable" onsubmit = "actualizarTipoEntregable(event, ${id})" >
+        <form id="form-tipo-entregable" onsubmit="actualizarTipoEntregable(event, ${id})">
             <div class="form-group">
                 <label>Nombre del Tipo *</label>
                 <input type="text" name="nombre_tipo" required value="${tipo.Nombre_Tipo || ''}">
@@ -776,8 +776,8 @@ async function editarTipoEntregable(id) {
                 <button type="button" class="btn-secondary" onclick="intentarCerrarModal('modal-generico')">Cancelar</button>
                 <button type="submit" class="btn-primary">Actualizar</button>
             </div>
-        </form >
-        `);
+        </form>
+    `);
 }
 
 async function actualizarTipoEntregable(event, id) {
@@ -895,32 +895,32 @@ async function eliminarTipoEntregable(id) {
 
 function mostrarFormularioCategoriaHerramienta() {
     mostrarModal('Nueva Categoría de Herramienta', `
-        < form id = "form-categoria-herramienta" onsubmit = "guardarCategoriaHerramienta(event)" >
+        <form id="form-categoria-herramienta" onsubmit="guardarCategoriaHerramienta(event)">
             <input type="hidden" name="id_categoria_herramienta" value="">
-                <div class="form-group">
-                    <label>Nombre de la Categoría *</label>
-                    <input type="text" name="nombre_categoria" required placeholder="Ej: VISUALIZACIÓN" style="text-transform: uppercase;">
-                </div>
+            <div class="form-group">
+                <label>Nombre de la Categoría *</label>
+                <input type="text" name="nombre_categoria" required placeholder="Ej: VISUALIZACIÓN" style="text-transform: uppercase;">
+            </div>
 
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea name="descripcion" rows="3" placeholder="Breve descripción de la categoría"></textarea>
-                </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" rows="3" placeholder="Breve descripción de la categoría"></textarea>
+            </div>
 
-                <div class="form-group">
-                    <label>Estado *</label>
-                    <select name="estado" required>
-                        <option value="Activo">Activo</option>
-                        <option value="Inactivo">Inactivo</option>
-                        <option value="Pausado">Pausado</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Estado *</label>
+                <select name="estado" required>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                    <option value="Pausado">Pausado</option>
+                </select>
+            </div>
 
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="intentarCerrarModal('modal-generico')">Cancelar</button>
-                    <button type="submit" class="btn-primary">Guardar</button>
-                </div>
-            </form>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="intentarCerrarModal('modal-generico')">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar</button>
+            </div>
+        </form>
     `);
 }
 
@@ -942,7 +942,7 @@ async function guardarCategoriaHerramienta(event) {
 
         // Crear categoría temporal y agregarla inmediatamente
         const tempCategoria = {
-            ID_Categoria: `temp_${Date.now()} `,
+            ID_Categoria: `temp_${Date.now()}`,
             ...categoriaData,
             Fecha_Creacion: new Date().toISOString(),
             Ultima_Actualizacion: new Date().toISOString()
@@ -1001,7 +1001,7 @@ async function editarCategoriaHerramienta(id) {
     if (!cat) return;
 
     mostrarModal('Editar Categoría', `
-        < form id = "form-categoria-herramienta" onsubmit = "actualizarCategoriaHerramienta(event, ${id})" >
+        <form id="form-categoria-herramienta" onsubmit="actualizarCategoriaHerramienta(event, ${id})">
             <div class="form-group">
                 <label>Nombre de la Categoría *</label>
                 <input type="text" name="nombre_categoria" required value="${cat.Nombre_Categoria || ''}" style="text-transform: uppercase;">
@@ -1025,8 +1025,8 @@ async function editarCategoriaHerramienta(id) {
                 <button type="button" class="btn-secondary" onclick="intentarCerrarModal('modal-generico')">Cancelar</button>
                 <button type="submit" class="btn-primary">Actualizar</button>
             </div>
-        </form >
-        `);
+        </form>
+    `);
 }
 
 async function actualizarCategoriaHerramienta(event, id) {
