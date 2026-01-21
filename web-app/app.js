@@ -82,7 +82,13 @@ async function cargarTodosDatos() {
 
         console.log('📥 Cargando hojas:', Object.values(CONFIG.SHEETS));
 
-        // Cargar todas las hojas en paralelo
+        // COOLDOWN CHECK CHECK ELIMINADO para Carga Inicial (F5) a petición del usuario.
+        // "Si doy actualizar debería mostrarme lo nuevo"
+        // Se mantiene solo en sincronización automática de fondo.
+        const SYNC_COOLDOWN_MS = 10000;
+
+
+        // Cargar todas las hojas en paralelo (Si no hay cooldown o no hay caché)
         const [clientesData, marcasData, entregablesData, validacionesData, herramientasData, categoriasData, tiposEntregableData, usersData] = await Promise.all([
             leerHoja(CONFIG.SHEETS.CLIENTES).then(data => {
                 console.log('✅ Clientes cargados:', data.length);
@@ -169,9 +175,17 @@ async function sincronizarDatosInteligente() {
     try {
         // COOLDOWN CHECK: Si hubo una escritura reciente (últimos 15s), saltar sincronización
         // Esto evita que datos viejos del servidor sobrescriban cambios locales recientes (flickering)
-        const SYNC_COOLDOWN_MS = 15000;
-        if (Date.now() - appState.lastWriteTime < SYNC_COOLDOWN_MS) {
+        // COOLDOWN CHECK: Si hubo una escritura reciente (últimos 10s), saltar sincronización
+        const SYNC_COOLDOWN_MS = 10000;
+        const lastWrite = parseInt(localStorage.getItem('lastWriteTime') || '0');
+        if (Date.now() - lastWrite < SYNC_COOLDOWN_MS) {
             console.log('⏳ Sincronización pospuesta - En periodo de cooldown tras escritura');
+            return;
+        }
+
+        // SI EL USUARIO ESTÁ EDITANDO (Modal abierto): No sincronizar para evitar cambios de estado "por debajo"
+        if (appState.isUserOperating) {
+            console.log('⏸️ Usuario editando - sincronización pausada');
             return;
         }
 
@@ -1018,6 +1032,8 @@ function mostrarFormularioCliente() {
     modal.classList.add('active');
     form.reset();
     delete form.dataset.dirty;
+    // Protección de concurrencia
+    appState.isUserOperating = true;
 }
 
 // Cerrar formulario de cliente
@@ -1025,6 +1041,7 @@ function cerrarFormularioCliente(force = false) {
     intentarCerrarModal('modal-form-cliente', force);
     // Restaurar título original
     document.querySelector('#modal-form-cliente .modal-header h2').innerHTML = '<i class="fas fa-plus"></i> Nuevo Cliente';
+    appState.isUserOperating = false;
 }
 
 async function guardarCliente(event) {
@@ -1071,78 +1088,63 @@ async function guardarCliente(event) {
         appState.pendingOperations++;
 
         // MOSTRAR BLOQUEO CON SPINNER
-        mostrarBloqueoOperacion(isEdit ? 'Actualizando cliente...' : 'Creando cliente...');
+        mostrarBloqueoOperacion(isEdit ? 'Guardando cliente en la nube...' : 'Creando cliente en la nube...');
 
-        // ACTUALIZACIÓN OPTIMISTA: Actualizar UI INMEDIATAMENTE
-        if (isEdit) {
-            // Actualizar cliente existente
-            const index = appState.clientes.findIndex(c => c.ID_Cliente == clienteId);
-            if (index !== -1) {
-                appState.clientes[index] = {
-                    ...appState.clientes[index],
-                    ...clienteData
-                };
-            }
-        } else {
-            // Agregar nuevo cliente con ID temporal
-            const tempCliente = {
-                ID_Cliente: `temp_${Date.now()}`,
-                ...clienteData,
-                Fecha_Creacion: new Date().toISOString(),
-                Ultima_Actualizacion: new Date().toISOString()
-            };
-            appState.clientes.push(tempCliente);
-        }
-
-        // Guardar en localStorage
-        localStorage.setItem('clientes', JSON.stringify(appState.clientes));
-
-        // Actualizar UI INMEDIATAMENTE
-        cerrarFormularioCliente(true);
-        refrescarVistaActual(true);
-
-        // Guardar en Google Sheets en background
-        enviarAlScript({
+        const payload = {
             action: isEdit ? 'update' : 'add',
             sheetName: 'Clientes',
-            data: clienteData,
-            rowId: clienteId
-        }).then(result => {
-            if (result.status === 'success') {
-                console.log('✅ Cliente guardado en Sheets');
+            data: clienteData
+        };
 
-                // Si es creación, actualizar ID temporal con ID real
-                if (!isEdit && result.data && result.data.id) {
-                    const index = appState.clientes.findIndex(c => String(c.ID_Cliente).startsWith('temp_'));
-                    if (index !== -1) {
-                        appState.clientes[index].ID_Cliente = result.data.id;
-                        localStorage.setItem('clientes', JSON.stringify(appState.clientes));
-                        refrescarVistaActual(true);
-                    }
+        if (isEdit) {
+            payload.rowId = clienteId;
+        }
+
+        // GUARDADO SINCRÓNICO (BLOQUEANTE)
+        const result = await enviarAlScript(payload);
+
+        if (result.status === 'success') {
+            console.log('✅ Cliente guardado en Sheets');
+
+            // ACTUALIZAR ESTADO LOCAL SOLO TRAS ÉXITO
+            if (isEdit) {
+                const index = appState.clientes.findIndex(c => c.ID_Cliente == clienteId);
+                if (index !== -1) {
+                    appState.clientes[index] = { ...appState.clientes[index], ...clienteData };
                 }
-
-                ocultarBloqueoOperacion();
-                mostrarNotificacion(isEdit ? '✅ Cliente editado correctamente' : '✅ Cliente creado correctamente', 'success');
             } else {
-                ocultarBloqueoOperacion();
-                throw new Error(result.message);
+                appState.clientes.push({
+                    ID_Cliente: result.data.id || `temp_${Date.now()}`,
+                    ...clienteData,
+                    Fecha_Creacion: new Date().toISOString()
+                });
             }
-        }).catch(error => {
-            console.error('Error guardando en Sheets:', error);
-            ocultarBloqueoOperacion();
-            mostrarNotificacion('⚠️ Error al sincronizar - Se reintentará automáticamente', 'warning');
-        }).finally(() => {
-            appState.pendingOperations--;
-            if (appState.pendingOperations === 0) {
-                appState.isUserOperating = false;
-            }
-        });
+
+            localStorage.setItem('clientes', JSON.stringify(appState.clientes));
+
+            // Actualizar timestamp
+            const now = Date.now();
+            appState.lastWriteTime = now;
+            localStorage.setItem('lastWriteTime', now.toString());
+
+            // Actualizar UI
+            cerrarFormularioCliente(true);
+            refrescarVistaActual(true);
+
+            mostrarNotificacion('✅ Cliente guardado correctamente', 'success');
+        } else {
+            throw new Error(result.message || 'Error al guardar cliente');
+        }
 
     } catch (error) {
+        console.error('Error al guardar cliente:', error);
+        mostrarNotificacion('❌ Error: ' + error.message, 'error');
+    } finally {
+        appState.pendingOperations--;
         ocultarBloqueoOperacion();
-        mostrarNotificacion('❌ ' + error.message, 'error');
-        appState.isUserOperating = false;
-        appState.pendingOperations = Math.max(0, appState.pendingOperations - 1);
+        if (appState.pendingOperations === 0) {
+            appState.isUserOperating = false;
+        }
     }
 }
 
@@ -1500,11 +1502,14 @@ function mostrarFormularioMarca(idCliente) {
     form.querySelector('[name="id_marca"]').value = '';
 
     document.querySelector('#modal-form-marca .modal-header h2').innerHTML = '<i class="fas fa-plus"></i> Nueva Marca';
+    // Protección de concurrencia
+    appState.isUserOperating = true;
 }
 
 // Cerrar formulario de marca
 function cerrarFormularioMarca(force = false) {
     intentarCerrarModal('modal-form-marca', force);
+    appState.isUserOperating = false;
 }
 
 async function guardarMarca(event) {
@@ -1562,29 +1567,6 @@ async function guardarMarca(event) {
         // MOSTRAR BLOQUEO CON SPINNER
         mostrarBloqueoOperacion(isEdit ? 'Actualizando marca...' : 'Creando marca...');
 
-        // ACTUALIZACIÓN OPTIMISTA: Actualizar UI INMEDIATAMENTE
-        if (isEdit) {
-            const index = appState.marcas.findIndex(m => m.ID_Marca == marcaId);
-            if (index !== -1) {
-                appState.marcas[index] = { ...appState.marcas[index], ...marcaData };
-            }
-        } else {
-            const tempMarca = {
-                ID_Marca: `temp_${Date.now()}`,
-                ...marcaData,
-                Fecha_Creacion: new Date().toISOString()
-            };
-            appState.marcas.push(tempMarca);
-        }
-
-        localStorage.setItem('marcas', JSON.stringify(appState.marcas));
-
-        // Actualizar UI INMEDIATAMENTE
-        cerrarFormularioMarca(true);
-        refrescarVistaActual(true);
-        if (appState.currentCliente && appState.currentCliente.ID_Cliente == idCliente) {
-            verDetalleCliente(idCliente);
-        }
 
         // Preparar payload para el nuevo formato genérico
         const payload = {
@@ -1597,47 +1579,61 @@ async function guardarMarca(event) {
             payload.rowId = marcaId;
         }
 
-        // Guardar en background (sin await)
-        enviarAlScript(payload).then(result => {
-            if (result.status === 'success') {
-                console.log('✅ Marca guardada en Sheets');
+        // GUARDADO SINCRÓNICO (BLOQUEANTE)
+        const result = await enviarAlScript(payload);
 
-                // Si es creación, actualizar ID temporal con ID real
-                if (!isEdit && result.data && result.data.id) {
-                    const index = appState.marcas.findIndex(m => String(m.ID_Marca).startsWith('temp_'));
-                    if (index !== -1) {
-                        appState.marcas[index].ID_Marca = result.data.id;
-                        localStorage.setItem('marcas', JSON.stringify(appState.marcas));
-                        refrescarVistaActual(true);
-                        if (appState.currentCliente && appState.currentCliente.ID_Cliente == appState.marcas[index].ID_Cliente) {
-                            verDetalleCliente(appState.marcas[index].ID_Cliente);
-                        }
-                    }
+        if (result.status === 'success') {
+            console.log('✅ Marca guardada en Sheets');
+
+            // ACTUALIZAR ESTADO LOCAL SOLO TRAS ÉXITO
+            if (isEdit) {
+                const index = appState.marcas.findIndex(m => m.ID_Marca == marcaId);
+                if (index !== -1) {
+                    appState.marcas[index] = { ...appState.marcas[index], ...marcaData };
                 }
-
-                ocultarBloqueoOperacion();
-                mostrarNotificacion(isEdit ? '✅ Marca editada correctamente' : '✅ Marca creada correctamente', 'success');
             } else {
-                ocultarBloqueoOperacion();
-                throw new Error(result.message || 'Error al guardar marca');
+                appState.marcas.push({
+                    ID_Marca: result.data.id || `temp_${Date.now()}`,
+                    ...marcaData,
+                    Fecha_Creacion: new Date().toISOString()
+                });
             }
-        }).catch(error => {
-            console.error('Error al guardar marca en Sheets:', error);
-            ocultarBloqueoOperacion();
-            mostrarNotificacion('⚠️ Error al sincronizar - Se reintentará automáticamente', 'warning');
-        }).finally(() => {
-            appState.pendingOperations--;
-            if (appState.pendingOperations === 0) {
-                appState.isUserOperating = false;
+
+            localStorage.setItem('marcas', JSON.stringify(appState.marcas));
+
+            // Actualizar timestamp
+            const now = Date.now();
+            appState.lastWriteTime = now;
+            localStorage.setItem('lastWriteTime', now.toString());
+
+            // Actualizar UI
+            cerrarFormularioMarca(true);
+
+            // Refrescar vista actual
+            if (appState.currentView === 'clientes') {
+                if (appState.currentCliente && appState.currentCliente.ID_Cliente == idCliente) {
+                    verDetalleCliente(idCliente);
+                } else {
+                    renderizarTablaClientes();
+                }
+            } else {
+                refrescarVistaActual(true);
             }
-        });
+
+            mostrarNotificacion('✅ Marca guardada correctamente', 'success');
+        } else {
+            throw new Error(result.message || 'Error al guardar marca');
+        }
 
     } catch (error) {
         console.error('Error al guardar marca:', error);
+        mostrarNotificacion('❌ Error: ' + error.message, 'error');
+    } finally {
+        appState.pendingOperations--;
         ocultarBloqueoOperacion();
-        mostrarNotificacion('❌ Error al guardar: ' + error.message, 'error');
-        appState.isUserOperating = false;
-        appState.pendingOperations = Math.max(0, appState.pendingOperations - 1);
+        if (appState.pendingOperations === 0) {
+            appState.isUserOperating = false;
+        }
     }
 }
 
@@ -1794,9 +1790,25 @@ function mostrarFormularioEntregable(idMarca) {
 
     // Mostrar modal
     modal.classList.add('active');
+    appState.isUserOperating = true;
 }
 
 // Cerrar formulario de entregable
+function cerrarFormularioEntregable(force = false) {
+    const form = document.getElementById('form-entregable');
+
+    if (!force && form.dataset.dirty === 'true') {
+        if (!confirm('Tienes cambios sin guardar. ¿Seguro que quieres cerrar?')) {
+            return;
+        }
+    }
+
+    const modal = document.getElementById('modal-form-entregable');
+    modal.classList.remove('active');
+
+    // Liberar estado de operación
+    appState.isUserOperating = false;
+}
 function cerrarFormularioEntregable(force = false) {
     intentarCerrarModal('modal-form-entregable', force);
 }
@@ -2256,6 +2268,7 @@ function editarEntregable(idEntregable) {
 
     // Mostrar modal
     modal.classList.add('active');
+    appState.isUserOperating = true;
 }
 
 /**
@@ -2506,7 +2519,7 @@ async function guardarEntregable(event) {
         });
 
         if (duplicado) {
-            throw new Error(`Ya existe un entregable con el nombre "${duplicado.Nombre_Entregable}" para esta marca.`);
+            throw new Error(`Ya existe un entregable con el nombre "${duplicado.Nombre_Entregable}" (ID: ${duplicado.ID_Entregable}) para esta marca.`);
         }
 
         // Actualizar campo hidden de herramientas antes de leer
@@ -2542,33 +2555,7 @@ async function guardarEntregable(event) {
         appState.pendingOperations++;
 
         // MOSTRAR BLOQUEO CON SPINNER
-        mostrarBloqueoOperacion(isEdit ? 'Actualizando entregable...' : 'Creando entregable...');
-
-        let tempEntregable = null;
-
-        // ACTUALIZACIÓN OPTIMISTA: Actualizar UI INMEDIATAMENTE
-        if (isEdit) {
-            const index = appState.entregables.findIndex(e => e.ID_Entregable == entregableId);
-            if (index !== -1) {
-                appState.entregables[index] = { ...appState.entregables[index], ...entregableData };
-            }
-        } else {
-            tempEntregable = {
-                ID_Entregable: `temp_${Date.now()}`,
-                ...entregableData,
-                Fecha_Creacion: new Date().toISOString()
-            };
-            appState.entregables.push(tempEntregable);
-        }
-
-        localStorage.setItem('entregables', JSON.stringify(appState.entregables));
-
-        // Actualizar UI INMEDIATAMENTE
-        cerrarFormularioEntregable(true);
-        refrescarVistaActual(true);
-        if (appState.currentCliente && appState.currentCliente.ID_Cliente == idCliente) {
-            verDetalleCliente(idCliente);
-        }
+        mostrarBloqueoOperacion(isEdit ? 'Guardando entregable en la nube...' : 'Creando entregable en la nube...');
 
         // Preparar payload
         const payload = {
@@ -2581,54 +2568,63 @@ async function guardarEntregable(event) {
             payload.rowId = entregableId;
         }
 
-        // Guardar en background (sin await)
-        enviarAlScript(payload).then(result => {
-            if (result.status === 'success') {
-                console.log('✅ Entregable guardado en Sheets');
+        // GUARDADO SINCRÓNICO (BLOQUEANTE)
+        // Esperamos respuesta del servidor ANTES de actualizar UI
+        const result = await enviarAlScript(payload);
 
-                // Si es creación, actualizar ID temporal con ID real
-                if (!isEdit && result.data && result.data.id) {
-                    // Usar el ID temporal específico que creamos (tempEntregable.ID_Entregable)
-                    // Nota: tempEntregable está definido en el bloque else anterior, necesitamos acceder a él.
-                    // Corrección: buscar por el ID temporal específico guardado en appState
-                    const index = appState.entregables.findIndex(e => String(e.ID_Entregable) === String(tempEntregableId));
-                    if (index !== -1) {
-                        appState.entregables[index].ID_Entregable = result.data.id;
-                        localStorage.setItem('entregables', JSON.stringify(appState.entregables));
-                        // Renderizar directamente en lugar de usar refrescarVistaActual()
-                        if (appState.currentView === 'clientes') {
-                            renderizarTablaClientes();
-                        }
-                        if (appState.currentCliente && appState.currentCliente.ID_Cliente == idCliente) {
-                            verDetalleCliente(idCliente);
-                        }
-                    }
+        if (result.status === 'success') {
+            console.log('✅ Entregable guardado en Sheets');
+
+            // ACTUALIZAR ESTADO LOCAL SOLO TRAS ÉXITO
+            if (isEdit) {
+                const index = appState.entregables.findIndex(e => e.ID_Entregable == entregableId);
+                if (index !== -1) {
+                    appState.entregables[index] = { ...appState.entregables[index], ...entregableData };
                 }
-
-                ocultarBloqueoOperacion();
-                mostrarNotificacion(isEdit ? '✅ Entregable editado correctamente' : '✅ Entregable creado correctamente', 'success');
             } else {
-                ocultarBloqueoOperacion();
-                throw new Error(result.message || 'Error al guardar entregable');
+                // Asignar ID real devuelto por el servidor
+                const nuevoEntregable = {
+                    ID_Entregable: result.data.id || `temp_${Date.now()}`, // Fallback si server no devuelve ID
+                    ...entregableData,
+                    Fecha_Creacion: new Date().toISOString()
+                };
+                appState.entregables.push(nuevoEntregable);
             }
-        }).catch(error => {
-            console.error('Error al guardar entregable en Sheets:', error);
-            ocultarBloqueoOperacion();
-            mostrarNotificacion('⚠️ Error al sincronizar - Se reintentará automáticamente', 'warning');
-        }).finally(() => {
-            appState.pendingOperations--;
-            if (appState.pendingOperations === 0) {
-                appState.isUserOperating = false;
+
+            localStorage.setItem('entregables', JSON.stringify(appState.entregables));
+
+            // Actualizar timestamp de escritura globalmente
+            const now = Date.now();
+            appState.lastWriteTime = now;
+            localStorage.setItem('lastWriteTime', now.toString());
+
+            // Actualizar UI
+            cerrarFormularioEntregable(true);
+            refrescarVistaActual(true);
+            if (appState.currentCliente && appState.currentCliente.ID_Cliente == idCliente) {
+                verDetalleCliente(idCliente);
             }
-        });
+
+            mostrarNotificacion(isEdit ? '✅ Entregable editado correctamente' : '✅ Entregable creado correctamente', 'success');
+        } else {
+            throw new Error(result.message || 'Error al guardar entregable');
+        }
 
     } catch (error) {
         console.error('Error al guardar entregable:', error);
+        mostrarNotificacion(`❌ Error al guardar: ${error.message}`, 'error');
+    } finally {
+        appState.pendingOperations--;
         ocultarBloqueoOperacion();
-        mostrarNotificacion('❌ Error al guardar: ' + error.message, 'error');
-        appState.isUserOperating = false;
-        appState.pendingOperations = Math.max(0, appState.pendingOperations - 1);
+        if (appState.pendingOperations === 0) {
+            appState.isUserOperating = false;
+        }
     }
+}
+localStorage.setItem('entregables', JSON.stringify(appState.entregables));
+// Renderizar directamente en lugar de usar refrescarVistaActual()
+if (appState.currentView === 'clientes') {
+    renderizarTablaClientes();
 }
 
 async function eliminarEntregable(idEntregable) {
@@ -2965,10 +2961,13 @@ function mostrarFormularioUser() {
     form.reset();
     delete form.dataset.dirty;
     document.querySelector('#modal-form-user .modal-header h2').innerHTML = '<i class="fas fa-user-plus"></i> Nuevo Usuario';
+    // Protección de concurrencia
+    appState.isUserOperating = true;
 }
 
 function cerrarFormularioUser(force = false) {
     intentarCerrarModal('modal-form-user', force);
+    appState.isUserOperating = false;
 }
 
 async function guardarUser(event) {
@@ -2988,62 +2987,63 @@ async function guardarUser(event) {
     try {
         const isEdit = !!userId;
 
+        // MARCAR QUE USUARIO ESTÁ OPERANDO
         appState.isUserOperating = true;
         appState.pendingOperations++;
-        mostrarBloqueoOperacion(isEdit ? 'Actualizando usuario...' : 'Creando usuario...');
 
-        if (isEdit) {
-            const index = appState.users.findIndex(u => u.ID_User == userId);
-            if (index !== -1) {
-                appState.users[index] = { ...appState.users[index], ...userData };
-            }
-        } else {
-            const tempUser = {
-                ID_User: `temp_${Date.now()}`,
-                ...userData,
-                Fecha_Creacion: new Date().toISOString()
-            };
-            appState.users.push(tempUser);
-        }
+        // MOSTRAR BLOQUEO CON SPINNER
+        mostrarBloqueoOperacion(isEdit ? 'Guardando usuario en la nube...' : 'Creando usuario en la nube...');
 
-        cerrarFormularioUser(true);
-        renderizarTablaUsers();
-
-        enviarAlScript({
+        // GUARDADO SINCRÓNICO (BLOQUEANTE)
+        const result = await enviarAlScript({
             action: isEdit ? 'update' : 'add',
             sheetName: 'Users',
             data: userData,
             rowId: userId
-        }).then(result => {
-            if (result.status === 'success') {
-                console.log('✅ Usuario guardado');
-                if (!isEdit && result.data && result.data.id) {
-                    const index = appState.users.findIndex(u => String(u.ID_User).startsWith('temp_'));
-                    if (index !== -1) {
-                        appState.users[index].ID_User = result.data.id;
-                        renderizarTablaUsers();
-                    }
-                }
-                ocultarBloqueoOperacion();
-                mostrarNotificacion(isEdit ? '✅ Usuario editado' : '✅ Usuario creado', 'success');
-            } else {
-                throw new Error(result.message);
-            }
-        }).catch(error => {
-            console.error('Error:', error);
-            ocultarBloqueoOperacion();
-            mostrarNotificacion('⚠️ Error al sincronizar', 'warning');
-        }).finally(() => {
-            appState.pendingOperations--;
-            if (appState.pendingOperations === 0) appState.isUserOperating = false;
         });
 
+        if (result.status === 'success') {
+            console.log('✅ Usuario guardado');
+
+            // ACTUALIZAR ESTADO LOCAL SOLO TRAS ÉXITO
+            if (isEdit) {
+                const index = appState.users.findIndex(u => u.ID_User == userId);
+                if (index !== -1) {
+                    appState.users[index] = { ...appState.users[index], ...userData };
+                }
+            } else {
+                appState.users.push({
+                    ID_User: result.data.id || `temp_${Date.now()}`,
+                    ...userData,
+                    Fecha_Creacion: new Date().toISOString()
+                });
+            }
+
+            localStorage.setItem('users', JSON.stringify(appState.users));
+
+            // Actualizar timestamp
+            const now = Date.now();
+            appState.lastWriteTime = now;
+            localStorage.setItem('lastWriteTime', now.toString());
+
+            // Actualizar UI
+            cerrarFormularioUser(true);
+            renderizarTablaUsers();
+
+            mostrarNotificacion(isEdit ? '✅ Usuario editado correctamente' : '✅ Usuario creado correctamente', 'success');
+        } else {
+            throw new Error(result.message || 'Error al guardar usuario');
+        }
+
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error al guardar usuario:', error);
+        mostrarNotificacion('❌ Error: ' + error.message, 'error');
+    } finally {
+        appState.pendingOperations--;
         ocultarBloqueoOperacion();
-        mostrarNotificacion('❌ ' + error.message, 'error');
-        appState.isUserOperating = false;
-        appState.pendingOperations = Math.max(0, appState.pendingOperations - 1);
+        if (appState.pendingOperations === 0) {
+            appState.isUserOperating = false;
+        }
     }
 }
 

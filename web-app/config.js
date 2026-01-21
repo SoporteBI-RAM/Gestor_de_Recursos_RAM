@@ -42,7 +42,7 @@ const CONFIG = {
  * @param {string} range - Rango de celdas (ej: 'A1:Z1000') - IGNORADO, siempre lee toda la hoja
  * @returns {Promise<Array>} - Array de filas
  */
-async function leerHoja(sheetName, range = null, retries = 3, bustCache = false) {
+async function leerHoja(sheetName, range = null, retries = 3, bustCache = true) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             console.log(`📥 Cargando ${sheetName} (intento ${attempt}/${retries})...`);
